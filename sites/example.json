@@ -1,0 +1,16 @@
+{
+  "name": "testsite",
+  "base_url": "https://example.com/login",
+  "ignore_https_errors": true,
+  "login": {
+    "username": "user",
+    "password": "pass",
+    "user_selector": "input[name='username']",
+    "pass_selector": "input[name='password']",
+    "submit_selector": "button[type='submit']",
+    "success_selector": "text=Logout"
+  },
+  "watch": [
+    { "name": "main_dashboard", "url": "https://example.com/dashboard", "root_selector": "body" }
+  ]
+}

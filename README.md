@@ -2,170 +2,178 @@
 
 **Whistleblower** is a read-only watchdog for building automation systems.
 
-It logs into existing BAS web interfaces (Niagara, Metasys, Tracer, Honeywell, Siemens, Distech, etc), captures what the operator sees, and preserves evidence when the graphics don’t line up with reality.
+It logs into whatever BAS web interface you've got (Niagara, Metasys, Tracer, Honeywell, Siemens, Distech, janky custom shit—doesn't matter), navigates the graphics/dashboards, and grabs what the operator actually sees: screenshots, DOM text, element states.
 
-No write-backs.  
+The goal: catch when the pretty pictures lie about what's really happening in the building. No assumptions, no deep integrations—just evidence.
+
+No write access.  
 No drivers.  
 No vendor SDKs.  
 No cloud.  
 No subscriptions.  
 
-Just screenshots, DOM snapshots, and receipts.
+Just local artifacts and receipts.
 
 ---
 
-## What Whistleblower does (right now)
+## What Whistleblower does (current MVP)
 
-- Automates login to a BAS web UI  
-- Navigates to configured dashboard / graphics pages  
-- Captures:
-  - full-page screenshots  
-  - visible DOM text and stateful elements  
-- Stores everything locally for later comparison and analysis  
+- Automates login to a BAS web UI using your provided credentials/selectors
+- Navigates to your configured pages (dashboards, graphics, trends, etc.)
+- Captures on each run:
+  - Full-page screenshots
+  - Visible DOM text + key element states (via CSS selectors you define)
+- Stores timestamped artifacts locally for manual review or future comparison
 
-This is intentionally **read-only** and **vendor-agnostic**.
+Intentionally **read-only** and **vendor-agnostic**. Works on whatever crap UI the system exposes via browser.
 
 ---
 
 ## What it deliberately does NOT do
 
-- ❌ No setpoint changes  
-- ❌ No BACnet / Modbus / Lon stacks  
-- ❌ No Niagara SDKs or vendor APIs  
-- ❌ No cloud services or telemetry  
-- ❌ No phoning home  
+- ❌ Setpoint changes or control actions
+- ❌ BACnet/Modbus/Lon protocol stacks
+- ❌ Niagara SDKs, vendor APIs, or deep integrations
+- ❌ Cloud uploads, telemetry, or phoning home
+- ❌ Automatic alerting (yet—coming after reliable capture)
 
-If your BAS UI lies, Whistleblower documents it.  
-What you do with that information is up to you.
+If the graphics are bullshitting you, Whistleblower just documents the bullshit. What you do next is on you.
 
 ---
 
 ## Requirements
 
-- Docker (Linux, macOS, or Windows)  
-- Access credentials to the BAS web interface you want to observe  
-- Internet access during image build (to pull base image + Python deps)  
+- Docker (Linux/macOS/Windows)
+- Valid credentials for the BAS web interface you want to watch
+- Internet only for the initial Docker build (pulls Python + Playwright deps)
 
-That’s it.
+That's literally it.
 
 ---
 
 ## Repository layout
 
 ```
-whistleblower/
-- Dockerfile
-- requirements.txt
-- whistleblower.py
-- sites/
-  - example.json
-- data/
-  - .gitkeep
-- README.md
-- LICENSE
-```
-	•	sites/ → site-specific configs (URLs, selectors, credentials)
-	•	data/ → screenshots + DOM snapshots written at runtime
-
-⸻
-
-Quick start
-
-1. Clone the repo
-
-```
-git clone https://github.com/makeitworkok/Whistleblower.git
-cd Whistleblower
+Whistleblower/
+├── Dockerfile
+├── requirements.txt
+├── whistleblower.py          # The main script (Playwright automation)
+├── sites/
+│   └── example.json          # Template—copy & edit for your site
+├── data/                     # Runtime output (screenshots, DOM, etc.)
+│   └── .gitkeep
+├── README.md
+└── LICENSE                   # MIT
 ```
 
-2. Create output directory
+- `sites/` → per-site JSON configs (URLs, creds, login selectors, pages to hit)
+- `data/` → where the goods land (don't commit this)
 
-```
-mkdir -p data
-```
-3. Build the container
-```
-docker build -t whistleblower .
-```
-The first build can take a while because it pulls browser dependencies.
+---
 
-4. Create a private local config (not committed)
+## Quick Start
 
-```
-cp sites/example.json sites/local.json
-```
-Then edit `sites/local.json` with your real URL, credentials, and selectors.
+1. Clone it
 
-5. Run against your local config
+   ```bash
+   git clone https://github.com/makeitworkok/Whistleblower.git
+   cd Whistleblower
+   ```
 
-Linux / macOS
-```
-docker run --rm \
-  -v "$(pwd)/sites:/app/sites" \
-  -v "$(pwd)/data:/app/data" \
-  whistleblower --config /app/sites/local.json
-```
-Windows PowerShell
-```
-docker run --rm `
-  -v "${PWD}\sites:/app/sites" `
-  -v "${PWD}\data:/app/data" `
-  whistleblower --config /app/sites/local.json
-```
+2. Make an output dir (if not already there)
 
-⸻
+   ```bash
+   mkdir -p data
+   ```
 
-Output
+3. Build the image (first time takes a bit—downloads browser binaries)
 
-After a run, you’ll see something like:
+   ```bash
+   docker build -t whistleblower .
+   ```
+
+4. Set up your private config (never commit this!)
+
+   ```bash
+   cp sites/example.json sites/my-site.json
+   ```
+
+   Edit `sites/my-site.json` with your real URL, username/password, login selectors, and pages/selectors. (See example.json comments for format.)
+
+5. Run it
+
+   **Linux/macOS:**
+
+   ```bash
+   docker run --rm \
+     -v "$(pwd)/sites:/app/sites" \
+     -v "$(pwd)/data:/app/data" \
+     whistleblower --config /app/sites/my-site.json
+   ```
+
+   **Windows (PowerShell):**
+
+   ```powershell
+   docker run --rm `
+     -v "${PWD}\sites:/app/sites" `
+     -v "${PWD}\data:/app/data" `
+     whistleblower --config /app/sites/my-site.json
+   ```
+
+---
+
+## Output Example
+
+After a successful run:
+
 ```
 data/
-└── testsite/
-    └── 20260209-134512/
-        └── main_dashboard/
+└── my-site/                  # From "site_name" in your config
+    └── 20260210-161200/      # Timestamp of run
+        ├── main_dashboard/
+        │   ├── screenshot.png
+        │   ├── dom.json       # Extracted text/elements
+        │   └── meta.json      # Run info, selectors used, etc.
+        └── ahu-graphics/
             ├── screenshot.png
-            ├── dom.json
-            └── meta.json
+            └── ...
 ```
-Each run is timestamped. Nothing is overwritten.
 
-⸻
+Each run gets its own timestamped folder. Nothing gets overwritten.
 
-Configuration
+---
 
-Site configs live in sites/*.json.
+## Configuration (sites/*.json)
 
-You will need to provide:
-	•	login URL
-	•	username / password
-	•	CSS selectors for login fields
-	•	one or more pages to capture
+Configs are per-site JSON files. Minimal example in `sites/example.json`.
 
-This is intentional. BAS UIs are inconsistent, and pretending otherwise is a lie.
+Key fields you'll need:
 
-See sites/example.json for the minimal required structure.
+- `site_name`: Friendly name for output folders
+- `url`: Base/login URL
+- `username` / `password`: Plain text (keep this file private!)
+- `login`: Object with selectors (e.g., input[name="username"])
+- `pages`: Array of pages to visit, each with `path` (relative URL) and optional `selectors` (CSS to extract)
 
-⸻
+BAS UIs vary wildly—some need delays, some have iframes, some throw modals. Tweak selectors and add waits in code as needed for your target.
 
-Status
+---
 
-This project is early and intentionally simple.
+## Current Status
 
-Current focus:
-	•	reliable navigation
-	•	reliable capture
-	•	clean, inspectable artifacts
+Early alpha—MVP capture works (login → nav → screenshot/DOM dump), tested on a private test site with real screenshots landing in data/.
 
-Future work (not yet implemented):
-	•	change detection between runs
-	•	rule-based detection of “graphics lying”
-	•	optional local AI narration (still read-only)
+Focus right now: rock-solid navigation and capture reliability across flaky UIs.
 
-No timelines. No promises. Just steady progress.
+Next up (no hard dates):
+- Basic change detection (compare runs)
+- Simple rule-based "whistles" (e.g., fan icon says running but temp dropping)
+- Optional local LLM narration of diffs (still read-only)
 
-⸻
+No rush. Build what works.
 
-License
+---
 
-MIT.
-Use it, fork it, break it, fix it.
+## License
+
+MIT. Fork it, break it, fix it, use it on whatever the hell you want.

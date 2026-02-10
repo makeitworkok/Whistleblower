@@ -2,6 +2,10 @@
 data/*
 !data/.gitkeep
 
+# private site configs
+sites/local.json
+sites/*.local.json
+
 # python junk
 __pycache__/
 *.pyc

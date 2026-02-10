@@ -1,16 +1,20 @@
 {
-  "name": "testsite",
-  "base_url": "https://example.com/login",
+  "name": "your_site_name",
+  "base_url": "https://your-bas-host/login",
   "ignore_https_errors": true,
   "login": {
-    "username": "user",
-    "password": "pass",
-    "user_selector": "input[name='username']",
-    "pass_selector": "input[name='password']",
+    "username": "your_username",
+    "password": "your_password",
+    "user_selector": "#username",
+    "pass_selector": "#password",
     "submit_selector": "button[type='submit']",
     "success_selector": "text=Logout"
   },
   "watch": [
-    { "name": "main_dashboard", "url": "https://example.com/dashboard", "root_selector": "body" }
+    {
+      "name": "main_dashboard",
+      "url": "https://your-bas-host/dashboard",
+      "root_selector": "body"
+    }
   ]
 }

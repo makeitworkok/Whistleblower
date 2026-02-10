@@ -89,21 +89,28 @@ docker build -t whistleblower .
 ```
 The first build can take a while because it pulls browser dependencies.
 
-4. Run against the example config
+4. Create a private local config (not committed)
+
+```
+cp sites/example.json sites/local.json
+```
+Then edit `sites/local.json` with your real URL, credentials, and selectors.
+
+5. Run against your local config
 
 Linux / macOS
 ```
 docker run --rm \
   -v "$(pwd)/sites:/app/sites" \
   -v "$(pwd)/data:/app/data" \
-  whistleblower --config /app/sites/example.json
+  whistleblower --config /app/sites/local.json
 ```
 Windows PowerShell
 ```
 docker run --rm `
   -v "${PWD}\sites:/app/sites" `
   -v "${PWD}\data:/app/data" `
-  whistleblower --config /app/sites/example.json
+  whistleblower --config /app/sites/local.json
 ```
 
 ⸻

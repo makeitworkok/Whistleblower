@@ -57,6 +57,12 @@ def parse_args() -> argparse.Namespace:
         help="Navigation/action timeout in milliseconds. Default: 30000",
     )
     parser.add_argument(
+        "--settle-ms",
+        type=int,
+        default=5000,
+        help="Additional wait time before capture after page/root selector is ready. Default: 5000",
+    )
+    parser.add_argument(
         "--headed",
         action="store_true",
         help="Run browser in headed mode (useful for debugging).",
@@ -228,12 +234,15 @@ def capture_target(
     target: WatchTarget,
     run_dir: Path,
     timeout_ms: int,
+    settle_ms: int,
     started_at_utc: str,
 ) -> None:
     page = context.new_page()
     try:
         page.goto(target.url, wait_until="domcontentloaded", timeout=timeout_ms)
         page.wait_for_selector(target.root_selector, timeout=timeout_ms)
+        if settle_ms > 0:
+            page.wait_for_timeout(settle_ms)
         write_capture_artifacts(
             page=page,
             target=target,
@@ -244,7 +253,13 @@ def capture_target(
         page.close()
 
 
-def run(cfg: SiteConfig, data_dir: Path, timeout_ms: int, headed: bool) -> Path:
+def run(
+    cfg: SiteConfig,
+    data_dir: Path,
+    timeout_ms: int,
+    settle_ms: int,
+    headed: bool,
+) -> Path:
     run_dir = make_run_dir(data_dir=data_dir, site_name=cfg.name)
     started_at_utc = datetime.now(timezone.utc).isoformat()
     with sync_playwright() as p:
@@ -263,6 +278,7 @@ def run(cfg: SiteConfig, data_dir: Path, timeout_ms: int, headed: bool) -> Path:
                     target=target,
                     run_dir=run_dir,
                     timeout_ms=timeout_ms,
+                    settle_ms=settle_ms,
                     started_at_utc=started_at_utc,
                 )
         finally:
@@ -282,6 +298,7 @@ def main() -> int:
             cfg=cfg,
             data_dir=data_dir,
             timeout_ms=args.timeout_ms,
+            settle_ms=args.settle_ms,
             headed=args.headed,
         )
     except (ValueError, TimeoutError) as exc:

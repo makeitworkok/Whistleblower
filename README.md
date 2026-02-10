@@ -166,6 +166,7 @@ Early alpha—MVP capture works (login → nav → screenshot/DOM dump), tested 
 Focus right now: rock-solid navigation and capture reliability across flaky UIs.
 
 Next up (no hard dates):
+
 - Basic change detection (compare runs)
 - Simple rule-based "whistles" (e.g., fan icon says running but temp dropping)
 - Optional local LLM narration of diffs (still read-only)

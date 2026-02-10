@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+import time
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -169,13 +170,25 @@ def login(page: Page, cfg: SiteConfig, timeout_ms: int) -> None:
         page.locator(cfg.login.user_selector).fill(cfg.login.username, timeout=timeout_ms)
         page.locator(cfg.login.pass_selector).fill(cfg.login.password, timeout=timeout_ms)
         page.locator(cfg.login.submit_selector).click(timeout=timeout_ms)
-        try:
-            page.locator(cfg.login.success_selector).wait_for(timeout=timeout_ms)
-            return
-        except TimeoutError as exc:
-            last_error = exc
-            if attempt < cfg.login_attempts:
-                page.wait_for_load_state("domcontentloaded", timeout=timeout_ms)
+
+        attempt_deadline = time.monotonic() + (timeout_ms / 1000)
+        while time.monotonic() < attempt_deadline:
+            if page.locator(cfg.login.success_selector).first.is_visible():
+                return
+
+            user_visible = page.locator(cfg.login.user_selector).first.is_visible()
+            pass_visible = page.locator(cfg.login.pass_selector).first.is_visible()
+            if user_visible and pass_visible:
+                break
+
+            page.wait_for_timeout(500)
+
+        last_error = TimeoutError(
+            f"Login attempt {attempt}/{cfg.login_attempts} did not reach "
+            f"`{cfg.login.success_selector}`."
+        )
+        if attempt < cfg.login_attempts:
+            page.wait_for_load_state("domcontentloaded", timeout=timeout_ms)
     if last_error is not None:
         raise last_error
     raise TimeoutError("Login failed before success selector check.")

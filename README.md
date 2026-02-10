@@ -44,6 +44,7 @@ What you do with that information is up to you.
 
 - Docker (Linux, macOS, or Windows)  
 - Access credentials to the BAS web interface you want to observe  
+- Internet access during image build (to pull base image + Python deps)  
 
 That’s it.
 
@@ -86,6 +87,8 @@ mkdir -p data
 ```
 docker build -t whistleblower .
 ```
+The first build can take a while because it pulls browser dependencies.
+
 4. Run against the example config
 
 Linux / macOS

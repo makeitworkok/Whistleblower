@@ -165,20 +165,52 @@ def make_run_dir(data_dir: Path, site_name: str) -> Path:
 
 def login(page: Page, cfg: SiteConfig, timeout_ms: int) -> None:
     page.goto(cfg.base_url, wait_until="domcontentloaded", timeout=timeout_ms)
+
+    def login_succeeded() -> bool:
+        if page.locator(cfg.login.success_selector).first.is_visible():
+            return True
+        user_visible = page.locator(cfg.login.user_selector).first.is_visible()
+        pass_visible = page.locator(cfg.login.pass_selector).first.is_visible()
+        return (not user_visible and not pass_visible) and (page.url != cfg.base_url)
+
+    def login_form_ready() -> bool:
+        user = page.locator(cfg.login.user_selector).first
+        password = page.locator(cfg.login.pass_selector).first
+        return (
+            user.is_visible()
+            and user.is_enabled()
+            and password.is_visible()
+            and password.is_enabled()
+        )
+
     last_error: TimeoutError | None = None
     for attempt in range(1, cfg.login_attempts + 1):
-        page.locator(cfg.login.user_selector).fill(cfg.login.username, timeout=timeout_ms)
-        page.locator(cfg.login.pass_selector).fill(cfg.login.password, timeout=timeout_ms)
-        page.locator(cfg.login.submit_selector).click(timeout=timeout_ms)
+        ready_deadline = time.monotonic() + (timeout_ms / 1000)
+        while time.monotonic() < ready_deadline:
+            if login_succeeded():
+                return
+            if login_form_ready():
+                break
+            page.wait_for_timeout(500)
+        else:
+            last_error = TimeoutError(
+                f"Login attempt {attempt}/{cfg.login_attempts} could not find an enabled login form."
+            )
+            if attempt < cfg.login_attempts:
+                continue
+            break
+
+        form_timeout_ms = min(timeout_ms, 10000)
+        page.locator(cfg.login.user_selector).fill(cfg.login.username, timeout=form_timeout_ms)
+        page.locator(cfg.login.pass_selector).fill(cfg.login.password, timeout=form_timeout_ms)
+        page.locator(cfg.login.submit_selector).click(timeout=form_timeout_ms)
 
         attempt_deadline = time.monotonic() + (timeout_ms / 1000)
         while time.monotonic() < attempt_deadline:
-            if page.locator(cfg.login.success_selector).first.is_visible():
+            if login_succeeded():
                 return
 
-            user_visible = page.locator(cfg.login.user_selector).first.is_visible()
-            pass_visible = page.locator(cfg.login.pass_selector).first.is_visible()
-            if user_visible and pass_visible:
+            if login_form_ready():
                 break
 
             page.wait_for_timeout(500)
@@ -192,6 +224,47 @@ def login(page: Page, cfg: SiteConfig, timeout_ms: int) -> None:
     if last_error is not None:
         raise last_error
     raise TimeoutError("Login failed before success selector check.")
+
+
+def login_form_ready(page: Page, cfg: SiteConfig) -> bool:
+    user = page.locator(cfg.login.user_selector).first
+    password = page.locator(cfg.login.pass_selector).first
+    return (
+        user.is_visible()
+        and user.is_enabled()
+        and password.is_visible()
+        and password.is_enabled()
+    )
+
+
+def submit_login(page: Page, cfg: SiteConfig, timeout_ms: int) -> None:
+    form_timeout_ms = min(timeout_ms, 10000)
+    page.locator(cfg.login.user_selector).fill(cfg.login.username, timeout=form_timeout_ms)
+    page.locator(cfg.login.pass_selector).fill(cfg.login.password, timeout=form_timeout_ms)
+    page.locator(cfg.login.submit_selector).click(timeout=form_timeout_ms)
+
+
+def ensure_authenticated(page: Page, cfg: SiteConfig, timeout_ms: int) -> None:
+    if not login_form_ready(page, cfg):
+        return
+
+    last_error: TimeoutError | None = None
+    for attempt in range(1, cfg.login_attempts + 1):
+        submit_login(page, cfg, timeout_ms)
+        deadline = time.monotonic() + (timeout_ms / 1000)
+        while time.monotonic() < deadline:
+            if page.locator(cfg.login.success_selector).first.is_visible():
+                return
+            if not login_form_ready(page, cfg):
+                return
+            page.wait_for_timeout(500)
+
+        last_error = TimeoutError(
+            f"In-app login attempt {attempt}/{cfg.login_attempts} did not complete."
+        )
+
+    if last_error is not None:
+        raise last_error
 
 
 def extract_dom_snapshot(page: Page, root_selector: str) -> dict[str, Any]:
@@ -261,6 +334,7 @@ def write_capture_artifacts(
 
 def capture_target(
     context: BrowserContext,
+    cfg: SiteConfig,
     target: WatchTarget,
     run_dir: Path,
     timeout_ms: int,
@@ -270,9 +344,12 @@ def capture_target(
     page = context.new_page()
     try:
         page.goto(target.url, wait_until="domcontentloaded", timeout=timeout_ms)
+        ensure_authenticated(page, cfg, timeout_ms)
         page.wait_for_selector(target.root_selector, timeout=timeout_ms)
         if settle_ms > 0:
             page.wait_for_timeout(settle_ms)
+        ensure_authenticated(page, cfg, timeout_ms)
+        page.wait_for_selector(target.root_selector, timeout=timeout_ms)
         write_capture_artifacts(
             page=page,
             target=target,
@@ -305,6 +382,7 @@ def run(
             for target in cfg.watch:
                 capture_target(
                     context=context,
+                    cfg=cfg,
                     target=target,
                     run_dir=run_dir,
                     timeout_ms=timeout_ms,

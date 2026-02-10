@@ -36,6 +36,7 @@ class SiteConfig:
     name: str
     base_url: str
     ignore_https_errors: bool
+    login_attempts: int
     login: LoginConfig
     watch: list[WatchTarget]
 
@@ -120,10 +121,15 @@ def parse_site_config(raw: dict[str, Any]) -> SiteConfig:
             )
         )
 
+    login_attempts = int(raw.get("login_attempts", 1))
+    if login_attempts < 1:
+        raise ValueError("Config key `login_attempts` must be >= 1.")
+
     return SiteConfig(
         name=str(raw["name"]),
         base_url=str(raw["base_url"]),
         ignore_https_errors=bool(raw.get("ignore_https_errors", False)),
+        login_attempts=login_attempts,
         login=LoginConfig(
             username=str(login_raw["username"]),
             password=str(login_raw["password"]),
@@ -158,10 +164,21 @@ def make_run_dir(data_dir: Path, site_name: str) -> Path:
 
 def login(page: Page, cfg: SiteConfig, timeout_ms: int) -> None:
     page.goto(cfg.base_url, wait_until="domcontentloaded", timeout=timeout_ms)
-    page.locator(cfg.login.user_selector).fill(cfg.login.username, timeout=timeout_ms)
-    page.locator(cfg.login.pass_selector).fill(cfg.login.password, timeout=timeout_ms)
-    page.locator(cfg.login.submit_selector).click(timeout=timeout_ms)
-    page.locator(cfg.login.success_selector).wait_for(timeout=timeout_ms)
+    last_error: TimeoutError | None = None
+    for attempt in range(1, cfg.login_attempts + 1):
+        page.locator(cfg.login.user_selector).fill(cfg.login.username, timeout=timeout_ms)
+        page.locator(cfg.login.pass_selector).fill(cfg.login.password, timeout=timeout_ms)
+        page.locator(cfg.login.submit_selector).click(timeout=timeout_ms)
+        try:
+            page.locator(cfg.login.success_selector).wait_for(timeout=timeout_ms)
+            return
+        except TimeoutError as exc:
+            last_error = exc
+            if attempt < cfg.login_attempts:
+                page.wait_for_load_state("domcontentloaded", timeout=timeout_ms)
+    if last_error is not None:
+        raise last_error
+    raise TimeoutError("Login failed before success selector check.")
 
 
 def extract_dom_snapshot(page: Page, root_selector: str) -> dict[str, Any]:

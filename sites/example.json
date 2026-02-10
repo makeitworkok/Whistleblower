@@ -2,6 +2,7 @@
   "name": "your_site_name",
   "base_url": "https://your-bas-host/login",
   "ignore_https_errors": true,
+  "login_attempts": 1,
   "login": {
     "username": "your_username",
     "password": "your_password",

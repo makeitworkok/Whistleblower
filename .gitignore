@@ -1,0 +1,15 @@
+# runtime data
+data/*
+!data/.gitkeep
+
+# python junk
+__pycache__/
+*.pyc
+
+# editors
+.vscode/
+.idea/
+
+# OS junk
+.DS_Store
+Thumbs.db

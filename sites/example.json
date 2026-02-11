@@ -3,6 +3,10 @@
   "base_url": "https://your-bas-host/login",
   "ignore_https_errors": true,
   "login_attempts": 1,
+  "viewport": {
+    "width": 1280,
+    "height": 720
+  },
   "login": {
     "username": "your_username",
     "password": "your_password",
@@ -15,7 +19,26 @@
     {
       "name": "main_dashboard",
       "url": "https://your-bas-host/dashboard",
-      "root_selector": "body"
+      "root_selector": "body",
+      "settle_ms": 10000,
+      "screenshot_selector": null,
+      "screenshot_full_page": true,
+      "pre_click_selector": null,
+      "pre_click_wait_ms": 2000,
+      "pre_click_steps": [
+        {
+          "selector": "#nav-tree .site-node",
+          "action": "click",
+          "nth": 0,
+          "wait_ms": 1500
+        },
+        {
+          "selector": "#nav-tree .summary-link",
+          "action": "dblclick",
+          "nth": 0,
+          "wait_ms": 3000
+        }
+      ]
     }
   ]
 }

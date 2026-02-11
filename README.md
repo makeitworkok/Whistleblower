@@ -192,6 +192,36 @@ npx playwright codegen https://tracersynchronydemo.trane.com/hui/index.html --vi
 
 Use the generated click selectors in your site config under `watch[].pre_click_steps`.
 
+### Bootstrap a config by recording a real session
+
+For first-time setup, use the standalone recorder to generate a starter config from your
+actual login/navigation flow.
+
+1. Run the recorder locally (headed browser):
+
+   ```bash
+   python3 bootstrap_recorder.py \
+     --url "https://your-bas-host/login" \
+     --site-name "my_site" \
+     --ignore-https-errors \
+     --record-video
+   ```
+
+2. In the opened browser, perform a normal read-only operator flow:
+   - Login
+   - Navigate to the graphics/pages you care about
+   - Return to terminal and press Enter
+
+3. Generated outputs:
+   - `sites/my_site.bootstrap.json` (starter Whistleblower config)
+   - `sites/my_site.steps.json` (suggested `pre_click_steps`)
+   - `data/bootstrap/my_site/<timestamp>/` (raw events, screenshot, optional video)
+
+4. Copy and finalize:
+   - Copy `sites/my_site.bootstrap.json` to your real config (for example `sites/local.json`)
+   - Fill real credentials and adjust selectors as needed
+   - Move selected steps from `sites/my_site.steps.json` into `watch[].pre_click_steps`
+
 ---
 
 ## 🧪 Current Status

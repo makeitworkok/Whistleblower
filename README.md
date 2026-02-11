@@ -1,5 +1,12 @@
 # Whistleblower
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![Python](https://img.shields.io/badge/Python-3.11%2B-blue.svg)](https://www.python.org/)
+[![Docker](https://img.shields.io/badge/Docker-ready-0db7ed.svg)](https://www.docker.com/)
+[![Status](https://img.shields.io/badge/Status-Alpha-orange.svg)](#current-status)
+
+> Read-only evidence capture for BAS dashboards.
+
 **Whistleblower** is a read-only watchdog for building automation systems.
 
 It logs into whatever BAS web interface you've got (Niagara, Metasys, Tracer, Honeywell, Siemens, Distech, janky custom shit—doesn't matter), navigates the graphics/dashboards, and grabs what the operator actually sees: screenshots, DOM text, element states.
@@ -16,7 +23,7 @@ Just local artifacts and receipts.
 
 ---
 
-## What Whistleblower does (current MVP)
+## ✅ What Whistleblower does (current MVP)
 
 - Automates login to a BAS web UI using your provided credentials/selectors
 - Navigates to your configured pages (dashboards, graphics, trends, etc.)
@@ -29,7 +36,7 @@ Intentionally **read-only** and **vendor-agnostic**. Works on whatever crap UI t
 
 ---
 
-## What it deliberately does NOT do
+## 🚫 What it deliberately does NOT do
 
 - ❌ Setpoint changes or control actions
 - ❌ BACnet/Modbus/Lon protocol stacks
@@ -41,7 +48,7 @@ If the graphics are bullshitting you, Whistleblower just documents the bullshit.
 
 ---
 
-## Requirements
+## 🧰 Requirements
 
 - Docker (Linux/macOS/Windows)
 - Valid credentials for the BAS web interface you want to watch
@@ -51,7 +58,7 @@ That's literally it.
 
 ---
 
-## Repository layout
+## 🗂️ Repository layout
 
 ```
 Whistleblower/
@@ -71,7 +78,7 @@ Whistleblower/
 
 ---
 
-## Quick Start
+## ⚡ Quick Start
 
 1. Clone it
 
@@ -120,9 +127,21 @@ Whistleblower/
      whistleblower --config /app/sites/my-site.json
    ```
 
+6. Optional: record the full interaction as video
+
+   ```bash
+   docker run --rm \
+     -v "$(pwd)/sites:/app/sites" \
+     -v "$(pwd)/data:/app/data" \
+     whistleblower --config /app/sites/my-site.json --record-video
+   ```
+
+   Video output is saved per run at:
+   `data/<site_name>/<timestamp>/video/session.mp4`
+
 ---
 
-## Output Example
+## 📁 Output Example
 
 After a successful run:
 
@@ -143,7 +162,7 @@ Each run gets its own timestamped folder. Nothing gets overwritten.
 
 ---
 
-## Configuration (sites/*.json)
+## ⚙️ Configuration (sites/*.json)
 
 Configs are per-site JSON files. Minimal example in `sites/example.json`.
 
@@ -157,9 +176,25 @@ Key fields you'll need:
 
 BAS UIs vary wildly—some need delays, some have iframes, some throw modals. Tweak selectors and add waits in code as needed for your target.
 
+### Record steps with Playwright codegen
+
+If the UI is JS-driven and hard to script from static URLs, record your click path and pull selectors:
+
+```bash
+npx playwright codegen https://tracersynchronydemo.trane.com/hui/index.html --viewport-size 1920,1080
+```
+
+Useful variant (save script while recording):
+
+```bash
+npx playwright codegen https://tracersynchronydemo.trane.com/hui/index.html --viewport-size 1920,1080 -o codegen-session.ts
+```
+
+Use the generated click selectors in your site config under `watch[].pre_click_steps`.
+
 ---
 
-## Current Status
+## 🧪 Current Status
 
 Early alpha—MVP capture works (login → nav → screenshot/DOM dump), tested on a private test site with real screenshots landing in data/.
 
@@ -175,6 +210,6 @@ No rush. Build what works.
 
 ---
 
-## License
+## 📜 License
 
 MIT. Fork it, break it, fix it, use it on whatever the hell you want.

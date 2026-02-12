@@ -1,0 +1,15 @@
+{
+  "site_name": "one_line",
+  "captured_at_utc": "2026-02-12T18:14:59.524686+00:00",
+  "base_url": "https://demo.inductiveautomation.com/data/perspective/client/data-center-demo/single-line",
+  "suggested_pre_click_steps": [],
+  "notes": [
+    "Review selectors before use; dynamic classes may need refinement.",
+    "Copy selected steps into a target under watch[].pre_click_steps.",
+    "Credentials are placeholders in generated config by design."
+  ],
+  "artifacts": {
+    "raw_events": "data/bootstrap/one_line/20260212-181423/events.json",
+    "final_screenshot": "data/bootstrap/one_line/20260212-181423/final.png"
+  }
+}

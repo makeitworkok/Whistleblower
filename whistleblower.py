@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 import sys
 import time
@@ -106,7 +107,8 @@ def parse_args() -> argparse.Namespace:
 
 def load_json(path: Path) -> dict[str, Any]:
     try:
-        return json.loads(path.read_text(encoding="utf-8"))
+        raw = json.loads(path.read_text(encoding="utf-8"))
+        return resolve_env_placeholders(raw)
     except FileNotFoundError as exc:
         raise ValueError(f"Config file not found: {path}") from exc
     except json.JSONDecodeError as exc:
@@ -117,6 +119,23 @@ def require_keys(data: dict[str, Any], keys: list[str], context: str) -> None:
     missing = [key for key in keys if key not in data]
     if missing:
         raise ValueError(f"Missing keys in {context}: {', '.join(missing)}")
+
+
+def resolve_env_placeholders(value: Any) -> Any:
+    if isinstance(value, dict):
+        return {k: resolve_env_placeholders(v) for k, v in value.items()}
+    if isinstance(value, list):
+        return [resolve_env_placeholders(v) for v in value]
+    if isinstance(value, str):
+        match = re.fullmatch(r"\$\{([A-Z0-9_]+)\}", value.strip())
+        if match is None:
+            return value
+        env_key = match.group(1)
+        env_value = os.getenv(env_key)
+        if env_value is None:
+            raise ValueError(f"Missing required environment variable: {env_key}")
+        return env_value
+    return value
 
 
 def parse_site_config(raw: dict[str, Any]) -> SiteConfig:

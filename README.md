@@ -219,8 +219,26 @@ actual login/navigation flow.
 
 4. Copy and finalize:
    - Copy `sites/my_site.bootstrap.json` to your real config (for example `sites/local.json`)
-   - Fill real credentials and adjust selectors as needed
+   - Export env vars for credentials and adjust selectors as needed
    - Move selected steps from `sites/my_site.steps.json` into `watch[].pre_click_steps`
+
+   Generated bootstrap configs use environment placeholders by default:
+   - `username`: `${MY_SITE_USERNAME}`
+   - `password`: `${MY_SITE_PASSWORD}`
+
+   Example run:
+
+   ```bash
+   export MY_SITE_USERNAME='your_user'
+   export MY_SITE_PASSWORD='your_password'
+
+   docker run --rm \
+     -e MY_SITE_USERNAME \
+     -e MY_SITE_PASSWORD \
+     -v "$(pwd)/sites:/app/sites" \
+     -v "$(pwd)/data:/app/data" \
+     whistleblower --config /app/sites/my_site.local.json
+   ```
 
 ---
 
@@ -237,6 +255,47 @@ Next up (no hard dates):
 - Optional local LLM narration of diffs (still read-only)
 
 No rush. Build what works.
+
+---
+
+## 🧠 Analyze Captures with an Agent
+
+After a Whistleblower run completes, you can ask an LLM to review each captured target
+using both `screenshot.png` and `dom.json`.
+
+1. Set API key:
+
+   ```bash
+   export OPENAI_API_KEY='your_api_key'
+   ```
+
+   Optional (recommended): store once in a private file:
+
+   ```bash
+   cp .private/openai.env.example .private/openai.env
+   # edit .private/openai.env and set OPENAI_API_KEY=...
+   ```
+
+   `analyze_capture.py` auto-loads `.private/openai.env`.
+
+2. Analyze the latest run for a site:
+
+   ```bash
+   python3 analyze_capture.py --site ignition_demo
+   ```
+
+3. Or analyze an explicit run directory:
+
+   ```bash
+   python3 analyze_capture.py --run-dir data/ignition_demo/20260212-174539
+   ```
+
+Outputs are written next to each target:
+- `analysis.md` (human-readable findings)
+- `analysis.json` (structured metadata)
+
+And one run-level file:
+- `analysis_summary.json`
 
 ---
 

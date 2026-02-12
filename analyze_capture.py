@@ -157,7 +157,7 @@ def call_responses_api(
 def default_system_prompt() -> str:
     return (
         "You analyze BAS/HMI dashboard evidence. Be concise, factual, and avoid guessing. "
-        "If uncertain, say uncertain."
+        "If uncertain, say uncertain. Follow the requested markdown section order exactly."
     )
 
 
@@ -167,10 +167,11 @@ def default_user_prompt(meta: dict[str, Any], dom: dict[str, Any], max_dom_chars
     lines = [
         "Analyze this dashboard capture for operational insight and anomalies.",
         "Return markdown with these sections:",
-        "1. Snapshot",
-        "2. Potential issues",
-        "3. Evidence",
-        "4. Suggested checks",
+        "1. Summary (2-4 bullets, operator-facing, plain language)",
+        "2. Snapshot",
+        "3. Potential issues",
+        "4. Evidence",
+        "5. Suggested checks",
         "",
         "Capture metadata:",
         f"- target_name: {meta.get('target_name', '')}",

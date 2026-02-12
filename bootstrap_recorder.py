@@ -68,6 +68,17 @@ def iso_utc_now() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
+def parse_iso_utc(value: str | None) -> datetime | None:
+    if not value:
+        return None
+    try:
+        if value.endswith("Z"):
+            value = value[:-1] + "+00:00"
+        return datetime.fromisoformat(value)
+    except ValueError:
+        return None
+
+
 def sanitize_name(value: str) -> str:
     safe = []
     for char in value.strip():
@@ -234,10 +245,33 @@ def infer_watch_urls(start_url: str, events: list[dict[str, Any]]) -> list[str]:
     return ordered
 
 
+def infer_wait_ms_from_event_timing(events: list[dict[str, Any]], index: int) -> int:
+    current_ts = parse_iso_utc(str(events[index].get("ts_utc") or ""))
+    if current_ts is None:
+        return 2000
+
+    next_ts: datetime | None = None
+    for later in range(index + 1, len(events)):
+        event_type = str(events[later].get("type") or "")
+        if event_type in {"click", "dblclick"}:
+            next_ts = parse_iso_utc(str(events[later].get("ts_utc") or ""))
+            break
+        if event_type == "navigation" and bool(events[later].get("main_frame")):
+            next_ts = parse_iso_utc(str(events[later].get("ts_utc") or ""))
+            break
+
+    if next_ts is None:
+        return 2000
+
+    delta_ms = int((next_ts - current_ts).total_seconds() * 1000)
+    # Clamp to practical bounds to avoid extreme pauses or ultra-fast replay.
+    return max(250, min(delta_ms, 20000))
+
+
 def build_step_suggestions(events: list[dict[str, Any]]) -> list[dict[str, Any]]:
     suggestions: list[dict[str, Any]] = []
     seen: set[tuple[str, str]] = set()
-    for event in events:
+    for ix, event in enumerate(events):
         event_type = str(event.get("type") or "")
         if event_type not in {"click", "dblclick"}:
             continue
@@ -253,7 +287,7 @@ def build_step_suggestions(events: list[dict[str, Any]]) -> list[dict[str, Any]]
                 "selector": selector,
                 "action": "dblclick" if event_type == "dblclick" else "click",
                 "nth": 0,
-                "wait_ms": 2000,
+                "wait_ms": infer_wait_ms_from_event_timing(events, ix),
             }
         )
     return suggestions
@@ -389,6 +423,7 @@ def main() -> int:
             "Review selectors before use; dynamic classes may need refinement.",
             "Copy selected steps into a target under watch[].pre_click_steps.",
             "Credentials are placeholders in generated config by design.",
+            "Suggested wait_ms is inferred from observed time between actions/navigation.",
         ],
         "artifacts": {
             "raw_events": str(raw_events_path),

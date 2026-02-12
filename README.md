@@ -168,11 +168,18 @@ Configs are per-site JSON files. Minimal example in `sites/example.json`.
 
 Key fields you'll need:
 
-- `site_name`: Friendly name for output folders
-- `url`: Base/login URL
-- `username` / `password`: Plain text (keep this file private!)
-- `login`: Object with selectors (e.g., input[name="username"])
-- `pages`: Array of pages to visit, each with `path` (relative URL) and optional `selectors` (CSS to extract)
+- `name`: Friendly name for output folders
+- `base_url`: Login/entry URL
+- `login_attempts`: Retry count for login flows
+- `viewport`: Browser viewport size (`width`/`height`)
+- `login`: Credentials + selectors:
+  - `username` / `password` (or env placeholders like `${MY_SITE_USERNAME}`)
+  - `user_selector`, `pass_selector`, `submit_selector`, `success_selector`
+- `watch`: Array of capture targets. Each target supports:
+  - `name`, `url`, `root_selector`
+  - `settle_ms`
+  - `screenshot_full_page` or `screenshot_selector`
+  - optional `pre_click_selector`, `pre_click_wait_ms`, `pre_click_steps`
 
 BAS UIs vary wildly—some need delays, some have iframes, some throw modals. Tweak selectors and add waits in code as needed for your target.
 
@@ -255,6 +262,19 @@ Next up (no hard dates):
 - Optional local LLM narration of diffs (still read-only)
 
 No rush. Build what works.
+
+## 🚦 Alpha Exit Checklist
+
+Mark this complete before cutting `v0.1.0-alpha`:
+
+- [ ] `docker build -t whistleblower .` succeeds on a clean machine.
+- [ ] At least 2 representative site configs run successfully (`--record-video` on).
+- [ ] Each run writes `screenshot.png`, `dom.json`, `meta.json` per target.
+- [ ] `readiness_error` is `null` for baseline demo targets.
+- [ ] `bootstrap_recorder.py` generates usable `*.bootstrap.json` and `*.steps.json`.
+- [ ] `analyze_capture.py` produces `analysis.md` + `analysis_summary.json`.
+- [ ] Private secrets are not committed (`sites/*.local.json`, `.private/*` ignored).
+- [ ] README quick start and config schema match real CLI behavior.
 
 ---
 

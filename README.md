@@ -262,6 +262,7 @@ Next up (no hard dates):
 - Basic change detection (compare runs)
 - Simple rule-based "whistles" (e.g., fan icon says running but temp dropping)
 - Optional local LLM narration of diffs (still read-only)
+- Windows non-dev packaging track: `docs/windows-packaging-plan.md`
 
 No rush. Build what works.
 

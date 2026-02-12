@@ -1,6 +1,6 @@
-# Windows Packaging Plan (Non-Dev End Users)
+# 🪟 Windows Packaging Plan (Non-Dev End Users)
 
-## Objective
+## 🎯 Objective
 
 Deliver a Windows-first app that non-technical users can run with:
 
@@ -12,12 +12,12 @@ Deliver a Windows-first app that non-technical users can run with:
 
 Core capture logic (`whistleblower.py`) remains the source of truth.
 
-## Priority Rule
+## 🧭 Priority Rule
 
 - Primary focus stays on capture reliability and artifact correctness.
 - Packaging/UI work proceeds in small, isolated steps that do not destabilize core behavior.
 
-## Phase 0: Prerequisites (Current Foundation)
+## 0️⃣ Phase 0: Prerequisites (Current Foundation)
 
 Goal: Ensure CLI behavior is stable enough to wrap.
 
@@ -30,7 +30,7 @@ Exit criteria:
 - Repeatable successful runs on known demo/site configs.
 - Clear error messaging for config/login/selector failures.
 
-## Phase 1: Windows Packaging Smoke Test (CLI Only)
+## 1️⃣ Phase 1: Windows Packaging Smoke Test (CLI Only)
 
 Goal: Package existing CLI on Windows with no logic changes.
 
@@ -45,19 +45,13 @@ Exit criteria:
 - App runs on a clean Windows machine with no Python installed.
 - `--config ...` execution works and writes artifacts correctly.
 
-## Phase 2: Minimal GUI Wrapper
+## 2️⃣ Phase 2: Minimal GUI Wrapper
 
 Goal: Hide terminal/config complexity for end users.
 
 Implementation:
 
-- Add `gui_runner.py` (Tkinter) with:
-  - BAS URL input
-  - Username/password input
-  - Optional timeout/settle controls (simple defaults)
-  - `Start` button
-  - Live log text area
-  - Link/button to open output folder
+- Add `gui_runner.py` (Tkinter) with BAS URL input, username/password input, optional timeout/settle controls, `Start` button, live log text area, and link/button to open output folder.
 - GUI writes/uses a generated config file internally.
 - GUI launches capture process and streams stdout/stderr.
 
@@ -66,15 +60,13 @@ Exit criteria:
 - Non-technical user can complete a run without touching terminal.
 - Common failure states are visible in GUI (bad creds, selector timeout, etc.).
 
-## Phase 3: Installer and User Experience Hardening
+## 3️⃣ Phase 3: Installer and User Experience Hardening
 
 Goal: Make distribution and first-run behavior predictable.
 
 Implementation:
 
-- Choose distribution format:
-  - Simple zip (`--onedir`) first
-  - Installer (Inno Setup/NSIS) second
+- Choose distribution format: simple zip (`--onedir`) first, installer (Inno Setup/NSIS) second.
 - Add version metadata and app icon.
 - Add first-run checks (writable output folder, required files present).
 
@@ -83,7 +75,7 @@ Exit criteria:
 - Fresh machine install/unzip works without manual dependency steps.
 - User can recover from expected setup issues with clear prompts.
 
-## Phase 4: Trust and Operations Readiness
+## 4️⃣ Phase 4: Trust and Operations Readiness
 
 Goal: Reduce friction from Windows security/reputation systems.
 
@@ -98,7 +90,7 @@ Exit criteria:
 - Internal pilot users can install/run with minimal support.
 - Release process is documented and repeatable.
 
-## Known Gotchas to Track
+## ⚠️ Known Gotchas to Track
 
 - Playwright browser/runtime bundling in packaged app.
 - Path handling (`cwd`, temp dirs, spaces in paths, permissions).
@@ -106,7 +98,7 @@ Exit criteria:
 - Antivirus false positives on unsigned executables.
 - Differences between dev environment and clean target machines.
 
-## Suggested Execution Cadence
+## ⏱️ Suggested Execution Cadence
 
 1. Keep core reliability work as default stream.
 2. Time-box packaging/UI work in short branches.

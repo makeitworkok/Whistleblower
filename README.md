@@ -127,7 +127,7 @@ Whistleblower/
      whistleblower --config /app/sites/my-site.json
    ```
 
-6. Optional: record the full interaction as video
+6. Optional (debug only): record the full interaction as video
 
    ```bash
    docker run --rm \
@@ -138,6 +138,8 @@ Whistleblower/
 
    Video output is saved per run at:
    `data/<site_name>/<timestamp>/video/session.mp4`
+
+   For normal scheduled/routine capture, leave `--record-video` off.
 
 ---
 
@@ -268,7 +270,7 @@ No rush. Build what works.
 Mark this complete before cutting `v0.1.0-alpha`:
 
 - [ ] `docker build -t whistleblower .` succeeds on a clean machine.
-- [ ] At least 2 representative site configs run successfully (`--record-video` on).
+- [ ] At least 2 representative site configs run successfully (default run, no video).
 - [ ] Each run writes `screenshot.png`, `dom.json`, `meta.json` per target.
 - [ ] `readiness_error` is `null` for baseline demo targets.
 - [ ] `bootstrap_recorder.py` generates usable `*.bootstrap.json` and `*.steps.json`.

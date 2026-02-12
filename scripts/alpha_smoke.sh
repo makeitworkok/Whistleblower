@@ -24,8 +24,7 @@ for cfg in "$@"; do
     --config "/app/$cfg" \
     --timeout-ms 120000 \
     --settle-ms 15000 \
-    --post-login-wait-ms 15000 \
-    --record-video
+    --post-login-wait-ms 15000
 done
 
 echo ""

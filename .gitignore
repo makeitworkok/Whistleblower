@@ -6,6 +6,11 @@ data/*
 sites/local.json
 sites/*.local.json
 
+# private local secrets
+.private/*
+!.private/.gitkeep
+!.private/*.example
+
 # python junk
 __pycache__/
 *.pyc

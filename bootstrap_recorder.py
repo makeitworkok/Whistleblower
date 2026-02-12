@@ -78,6 +78,11 @@ def sanitize_name(value: str) -> str:
     return "".join(safe) or "unnamed"
 
 
+def to_env_prefix(value: str) -> str:
+    normalized = sanitize_name(value).upper()
+    return normalized.replace(".", "_").replace("-", "_")
+
+
 def event_init_script() -> str:
     # Records only structural interaction details; never sends typed values.
     return r"""
@@ -260,6 +265,7 @@ def main() -> int:
         raise SystemExit("ERROR: --viewport-width and --viewport-height must be >= 1.")
 
     site_name = sanitize_name(args.site_name)
+    env_prefix = to_env_prefix(site_name)
     run_root = Path(args.output_dir) / site_name / utc_timestamp()
     run_root.mkdir(parents=True, exist_ok=False)
 
@@ -364,8 +370,8 @@ def main() -> int:
             "height": args.viewport_height,
         },
         "login": {
-            "username": "REPLACE_ME",
-            "password": "REPLACE_ME",
+            "username": f"${{{env_prefix}_USERNAME}}",
+            "password": f"${{{env_prefix}_PASSWORD}}",
             "user_selector": inferred_login["user_selector"],
             "pass_selector": inferred_login["pass_selector"],
             "submit_selector": inferred_login["submit_selector"],

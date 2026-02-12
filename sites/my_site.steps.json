@@ -1,0 +1,15 @@
+{
+  "site_name": "my_site",
+  "captured_at_utc": "2026-02-12T17:38:17.279102+00:00",
+  "base_url": "https://your-bas-host/login",
+  "suggested_pre_click_steps": [],
+  "notes": [
+    "Review selectors before use; dynamic classes may need refinement.",
+    "Copy selected steps into a target under watch[].pre_click_steps.",
+    "Credentials are placeholders in generated config by design."
+  ],
+  "artifacts": {
+    "raw_events": "data/bootstrap/my_site/20260212-173616/events.json",
+    "final_screenshot": "data/bootstrap/my_site/20260212-173616/final.png"
+  }
+}

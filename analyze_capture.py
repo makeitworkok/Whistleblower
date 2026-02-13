@@ -17,9 +17,38 @@ from typing import Any
 
 DEFAULT_MODEL = "gpt-4.1-mini"
 DEFAULT_ENDPOINT = "https://api.openai.com/v1/responses"
+DEFAULT_XAI_MODEL = "grok-2-vision-latest"
+DEFAULT_XAI_ENDPOINT = "https://api.x.ai/v1/responses"
+
+
+def normalize_provider(provider: str) -> str:
+    provider_normalized = provider.strip().lower()
+    if provider_normalized == "grok":
+        return "xai"
+    if provider_normalized in {"openai", "xai"}:
+        return provider_normalized
+    raise ValueError(f"Unsupported provider: {provider}")
+
+
+def default_model_for_provider(provider: str) -> str:
+    if provider == "xai":
+        return os.getenv("XAI_MODEL", DEFAULT_XAI_MODEL)
+    return os.getenv("OPENAI_MODEL", DEFAULT_MODEL)
+
+
+def default_endpoint_for_provider(provider: str) -> str:
+    if provider == "xai":
+        return os.getenv("XAI_RESPONSES_ENDPOINT", DEFAULT_XAI_ENDPOINT)
+    return os.getenv("OPENAI_RESPONSES_ENDPOINT", DEFAULT_ENDPOINT)
+
+
+def default_api_key_env_for_provider(provider: str) -> str:
+    return "XAI_API_KEY" if provider == "xai" else "OPENAI_API_KEY"
 
 
 def parse_args() -> argparse.Namespace:
+    env_provider = os.getenv("ANALYSIS_PROVIDER", "openai").strip().lower()
+    default_provider = "xai" if env_provider in {"xai", "grok"} else "openai"
     parser = argparse.ArgumentParser(
         description="Analyze capture screenshots/DOM and emit structured notes."
     )
@@ -27,14 +56,31 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--data-dir", default="data", help="Root data directory. Default: data")
     parser.add_argument("--site", default=None, help="Site folder name under data/")
     parser.add_argument(
+        "--provider",
+        choices=["openai", "xai", "grok"],
+        default=default_provider,
+        help="LLM provider. `grok` is an alias for `xai`. Default: openai",
+    )
+    parser.add_argument(
         "--model",
-        default=os.getenv("OPENAI_MODEL", DEFAULT_MODEL),
-        help=f"Model for analysis. Default: {DEFAULT_MODEL}",
+        default=None,
+        help=(
+            "Model for analysis. Defaults by provider: "
+            f"openai={DEFAULT_MODEL}, xai={DEFAULT_XAI_MODEL}"
+        ),
     )
     parser.add_argument(
         "--endpoint",
-        default=os.getenv("OPENAI_RESPONSES_ENDPOINT", DEFAULT_ENDPOINT),
-        help=f"Responses API endpoint. Default: {DEFAULT_ENDPOINT}",
+        default=None,
+        help=(
+            "Responses API endpoint. Defaults by provider: "
+            f"openai={DEFAULT_ENDPOINT}, xai={DEFAULT_XAI_ENDPOINT}"
+        ),
+    )
+    parser.add_argument(
+        "--api-key-env",
+        default=None,
+        help="Environment variable name containing the API key. Defaults by provider.",
     )
     parser.add_argument(
         "--max-dom-chars",
@@ -50,7 +96,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--env-file",
         default=".private/openai.env",
-        help="Env file to load when OPENAI_API_KEY is not already set. Default: .private/openai.env",
+        help="Optional env file for API keys/models/endpoints. Default: .private/openai.env",
     )
     return parser.parse_args()
 
@@ -270,10 +316,23 @@ def load_env_file(path: Path) -> None:
 def main() -> int:
     args = parse_args()
     load_env_file(Path(args.env_file))
-    api_key = os.getenv("OPENAI_API_KEY")
+    provider = normalize_provider(args.provider)
+    model = args.model or default_model_for_provider(provider)
+    endpoint = args.endpoint or default_endpoint_for_provider(provider)
+    api_key_env = args.api_key_env or default_api_key_env_for_provider(provider)
+    api_key = os.getenv(api_key_env)
     if not api_key:
-        print("ERROR: OPENAI_API_KEY is not set.", file=sys.stderr)
-        return 1
+        if provider == "xai":
+            fallbacks = ["XAI_API_KEY", "GROK_API_KEY"]
+            for fallback_key in fallbacks:
+                fallback_value = os.getenv(fallback_key)
+                if fallback_value:
+                    api_key_env = fallback_key
+                    api_key = fallback_value
+                    break
+        if not api_key:
+            print(f"ERROR: API key env var is not set: {api_key_env}", file=sys.stderr)
+            return 1
 
     try:
         run_dir = Path(args.run_dir) if args.run_dir else find_latest_run(Path(args.data_dir), args.site)
@@ -287,9 +346,9 @@ def main() -> int:
         for target_dir in target_dirs:
             result = analyze_target(
                 target_dir=target_dir,
-                endpoint=args.endpoint,
+                endpoint=endpoint,
                 api_key=api_key,
-                model=args.model,
+                model=model,
                 max_dom_chars=args.max_dom_chars,
                 custom_prompt=args.prompt,
             )
@@ -301,7 +360,10 @@ def main() -> int:
                 {
                     "analyzed_at_utc": utc_now_iso(),
                     "run_dir": str(run_dir),
-                    "model": args.model,
+                    "provider": provider,
+                    "model": model,
+                    "endpoint": endpoint,
+                    "api_key_env": api_key_env,
                     "targets_analyzed": len(results),
                     "targets": results,
                 },

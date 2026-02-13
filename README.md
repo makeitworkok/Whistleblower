@@ -286,28 +286,47 @@ Mark this complete before cutting `v0.1.0-alpha`:
 After a Whistleblower run completes, you can ask an LLM to review each captured target
 using both `screenshot.png` and `dom.json`.
 
+Provider options:
+
+- OpenAI (default): `--provider openai` (or omit `--provider`)
+- xAI/Grok: `--provider xai` or `--provider grok`
+
 1. Set API key:
 
    ```bash
    export OPENAI_API_KEY='your_api_key'
    ```
 
+   For Grok/xAI instead:
+
+   ```bash
+   export XAI_API_KEY='your_xai_key'
+   ```
+
+   `GROK_API_KEY` is also accepted as a fallback.
+
    Optional (recommended): store once in a private file:
 
    ```bash
    cp .private/openai.env.example .private/openai.env
-   # edit .private/openai.env and set OPENAI_API_KEY=...
+   # edit .private/openai.env and set OPENAI_API_KEY or XAI_API_KEY
    ```
 
    `analyze_capture.py` auto-loads `.private/openai.env`.
 
-2. Analyze the latest run for a site:
+2. Analyze the latest run for a site (OpenAI default):
 
    ```bash
    python3 analyze_capture.py --site ignition_demo
    ```
 
-3. Or analyze an explicit run directory:
+3. Analyze the latest run for a site with Grok/xAI:
+
+   ```bash
+   python3 analyze_capture.py --provider grok --site ignition_demo
+   ```
+
+4. Analyze an explicit run directory:
 
    ```bash
    python3 analyze_capture.py --run-dir data/ignition_demo/20260212-174539

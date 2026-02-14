@@ -5,11 +5,11 @@
 [![Docker](https://img.shields.io/badge/Docker-ready-0db7ed.svg)](https://www.docker.com/)
 [![Status](https://img.shields.io/badge/Status-Alpha-orange.svg)](#current-status)
 
-> Read-only evidence capture for BAS dashboards.
+> Read-only evidence capture for dashboards.
 
 **Whistleblower** is a read-only watchdog for building automation systems.
 
-It logs into whatever BAS web interface you've got (Niagara, Metasys, Tracer, Honeywell, Siemens, Distech, janky custom shit—doesn't matter), navigates the graphics/dashboards, and grabs what the operator actually sees: screenshots, DOM text, element states.
+It logs into whatever web interface you've got (Niagara, Metasys, Tracer, Honeywell, Siemens, Distech, PLC, SCADA, janky custom shit—doesn't matter), navigates the graphics/dashboards, and grabs what the operator actually sees: screenshots, DOM text, element states.
 
 The goal: catch when the pretty pictures lie about what's really happening in the building. No assumptions, no deep integrations—just evidence.
 

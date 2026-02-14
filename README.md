@@ -1,6 +1,6 @@
 # Whistleblower
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![License: AGPLv3](https://img.shields.io/badge/License-AGPLv3-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/Python-3.11%2B-blue.svg)](https://www.python.org/)
 [![Docker](https://img.shields.io/badge/Docker-ready-0db7ed.svg)](https://www.docker.com/)
 [![Status](https://img.shields.io/badge/Status-Alpha-orange.svg)](#current-status)
@@ -70,7 +70,7 @@ Whistleblower/
 ├── data/                     # Runtime output (screenshots, DOM, etc.)
 │   └── .gitkeep
 ├── README.md
-└── LICENSE                   # MIT
+└── LICENSE                   # AGPL-3.0
 ```
 
 - `sites/` → per-site JSON configs (URLs, creds, login selectors, pages to hit)
@@ -342,5 +342,22 @@ And one run-level file:
 ---
 
 ## 📜 License
+## License & Philosophy: Keeping Whistleblower Free Forever
 
-MIT. Fork it, break it, fix it, use it on whatever the hell you want.
+Whistleblower is released under the **GNU Affero General Public License v3.0 (AGPL-3.0)**.
+
+This isn't just a license—it's a deliberate choice to protect the core mission of this project:
+
+- **Freedom first, always.** Anyone can use, study, modify, and share Whistleblower (the four essential freedoms of free software).
+- **No closed-source exploitation.** If you modify or extend it—even just to run it as a service over the network (SaaS/hosted version)—you **must** release your changes under the same AGPL terms. No hiding improvements behind paywalls or proprietary forks.
+- **Closing the loophole.** Unlike permissive licenses (MIT, Apache 2.0), AGPL ensures that if someone offers Whistleblower as a web service, users can still get the source code. This prevents big companies or bad actors from taking the work, monetizing it silently, and locking away contributions that should benefit everyone.
+- **Built to stay open.** The point of Whistleblower is to be a free, trustworthy, community-driven tool for evidence capture and analysis—without gatekeepers. AGPL enforces that promise with legal teeth: any derivative must remain free and open, forever.
+
+If you're looking for something you can close-source or sell without giving back: this isn't it.  
+If you believe in software that stays free as it grows and evolves: welcome—this license is for you.
+
+Full license text: [LICENSE](./LICENSE)  
+More on AGPL: https://www.gnu.org/licenses/agpl-3.0.html  
+Copyleft philosophy (GNU): https://www.gnu.org/philosophy/copyleft.en.html
+
+Contributions welcome—under AGPL terms, of course.

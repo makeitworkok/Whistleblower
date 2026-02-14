@@ -7,7 +7,7 @@
 
 > Read-only evidence capture for dashboards.
 
-**Whistleblower** is a read-only watchdog for building automation systems.
+**Whistleblower** is a read-only watchdog for building automation systems (really any web-based control system).
 
 It logs into whatever web interface you've got (Niagara, Metasys, Tracer, Honeywell, Siemens, Distech, PLC, SCADA, janky custom shit—doesn't matter), navigates the graphics/dashboards, and grabs what the operator actually sees: screenshots, DOM text, element states.
 

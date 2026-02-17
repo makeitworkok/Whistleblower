@@ -1,6 +1,6 @@
 {
-  "name": "one_line",
-  "base_url": "https://demo.inductiveautomation.com/data/perspective/client/data-center-demo/single-line",
+  "name": "building_management",
+  "base_url": "https://demo.inductiveautomation.com/data/perspective/client/building-management-system-demo/",
   "ignore_https_errors": true,
   "login_attempts": 2,
   "viewport": {
@@ -18,7 +18,7 @@
   "watch": [
     {
       "name": "target_1",
-      "url": "https://demo.inductiveautomation.com/data/perspective/client/data-center-demo/single-line",
+      "url": "https://demo.inductiveautomation.com/data/perspective/client/building-management-system-demo/",
       "root_selector": "body",
       "settle_ms": 10000,
       "screenshot_full_page": false

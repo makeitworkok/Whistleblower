@@ -89,13 +89,8 @@ def sanitize_name(value: str) -> str:
     return "".join(safe) or "unnamed"
 
 
-def to_env_prefix(value: str) -> str:
-    normalized = sanitize_name(value).upper()
-    return normalized.replace(".", "_").replace("-", "_")
-
-
 def event_init_script() -> str:
-    # Records only structural interaction details; never sends typed values.
+    # Records interaction details, including change values for login bootstrap.
     return r"""
 (() => {
   if (window.__wbRecorderInstalled) return;
@@ -183,7 +178,8 @@ def event_init_script() -> str:
       selector: cssSelector(el),
       tag: el.tagName,
       input_type: inputType,
-      value_length: valueLength
+      value_length: valueLength,
+      value: el.value || ''
     });
   }, true);
 })();
@@ -226,6 +222,33 @@ def infer_login_selectors(events: list[dict[str, Any]]) -> dict[str, str]:
         "submit_selector": submit_selector,
         "success_selector": DEFAULT_LOGIN["success_selector"],
     }
+
+
+def infer_login_credentials(
+    events: list[dict[str, Any]],
+    *,
+    user_selector: str,
+    pass_selector: str,
+) -> dict[str, str]:
+    username = ""
+    password = ""
+
+    for event in events:
+        if event.get("type") != "change":
+            continue
+        selector = str(event.get("selector") or "").strip()
+        value = str(event.get("value") or "")
+        input_type = str(event.get("input_type") or "").lower()
+
+        if selector and selector == user_selector:
+            username = value
+        elif input_type == "password" or (selector and selector == pass_selector):
+            password = value
+        elif not username and input_type in {"text", "email", "search", "textarea"}:
+            # Fallback: first likely user field before password selector is inferred.
+            username = value
+
+    return {"username": username, "password": password}
 
 
 def infer_watch_urls(start_url: str, events: list[dict[str, Any]]) -> list[str]:
@@ -299,7 +322,6 @@ def main() -> int:
         raise SystemExit("ERROR: --viewport-width and --viewport-height must be >= 1.")
 
     site_name = sanitize_name(args.site_name)
-    env_prefix = to_env_prefix(site_name)
     run_root = Path(args.output_dir) / site_name / utc_timestamp()
     run_root.mkdir(parents=True, exist_ok=False)
 
@@ -381,6 +403,11 @@ def main() -> int:
     raw_events_path.write_text(json.dumps(events, indent=2), encoding="utf-8")
 
     inferred_login = infer_login_selectors(events)
+    inferred_credentials = infer_login_credentials(
+        events,
+        user_selector=inferred_login["user_selector"],
+        pass_selector=inferred_login["pass_selector"],
+    )
     watch_urls = infer_watch_urls(args.url, events)
     watch = []
     for ix, url in enumerate(watch_urls[:8]):
@@ -404,8 +431,8 @@ def main() -> int:
             "height": args.viewport_height,
         },
         "login": {
-            "username": f"${{{env_prefix}_USERNAME}}",
-            "password": f"${{{env_prefix}_PASSWORD}}",
+            "username": inferred_credentials["username"],
+            "password": inferred_credentials["password"],
             "user_selector": inferred_login["user_selector"],
             "pass_selector": inferred_login["pass_selector"],
             "submit_selector": inferred_login["submit_selector"],
@@ -422,7 +449,7 @@ def main() -> int:
         "notes": [
             "Review selectors before use; dynamic classes may need refinement.",
             "Copy selected steps into a target under watch[].pre_click_steps.",
-            "Credentials are placeholders in generated config by design.",
+            "Captured username/password are stored directly in generated config.",
             "Suggested wait_ms is inferred from observed time between actions/navigation.",
         ],
         "artifacts": {

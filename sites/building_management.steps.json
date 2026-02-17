@@ -1,0 +1,23 @@
+{
+  "site_name": "building_management",
+  "captured_at_utc": "2026-02-17T17:17:40.569388+00:00",
+  "base_url": "https://demo.inductiveautomation.com/data/perspective/client/building-management-system-demo/",
+  "suggested_pre_click_steps": [
+    {
+      "selector": "span",
+      "action": "click",
+      "nth": 0,
+      "wait_ms": 20000
+    }
+  ],
+  "notes": [
+    "Review selectors before use; dynamic classes may need refinement.",
+    "Copy selected steps into a target under watch[].pre_click_steps.",
+    "Credentials are placeholders in generated config by design.",
+    "Suggested wait_ms is inferred from observed time between actions/navigation."
+  ],
+  "artifacts": {
+    "raw_events": "data/bootstrap/building_management/20260217-171631/events.json",
+    "final_screenshot": "data/bootstrap/building_management/20260217-171631/final.png"
+  }
+}

@@ -325,9 +325,15 @@ def login(page: Page, cfg: SiteConfig, timeout_ms: int) -> None:
             break
 
         form_timeout_ms = min(timeout_ms, 10000)
-        page.locator(cfg.login.user_selector).fill(cfg.login.username, timeout=form_timeout_ms)
-        page.locator(cfg.login.pass_selector).fill(cfg.login.password, timeout=form_timeout_ms)
-        page.locator(cfg.login.submit_selector).click(timeout=form_timeout_ms)
+        user = page.locator(cfg.login.user_selector).first
+        password = page.locator(cfg.login.pass_selector).first
+        user.fill(cfg.login.username, timeout=form_timeout_ms)
+        password.fill(cfg.login.password, timeout=form_timeout_ms)
+        try:
+            page.locator(cfg.login.submit_selector).click(timeout=form_timeout_ms)
+        except (TimeoutError, Error):
+            # Some BAS login forms submit on Enter and may not expose a stable submit control.
+            password.press("Enter", timeout=form_timeout_ms)
 
         attempt_deadline = time.monotonic() + (timeout_ms / 1000)
         while time.monotonic() < attempt_deadline:
@@ -377,7 +383,11 @@ def submit_login(page: Page, cfg: SiteConfig, timeout_ms: int) -> None:
     form_timeout_ms = min(timeout_ms, 10000)
     user.fill(cfg.login.username, timeout=form_timeout_ms)
     password.fill(cfg.login.password, timeout=form_timeout_ms)
-    submit.click(timeout=form_timeout_ms)
+    try:
+        submit.click(timeout=form_timeout_ms)
+    except (TimeoutError, Error):
+        # Some BAS login forms submit on Enter and may not expose a stable submit control.
+        password.press("Enter", timeout=form_timeout_ms)
 
 
 def first_visible_enabled(
@@ -420,8 +430,11 @@ def find_login_controls(
             if submit is not None:
                 break
 
-    if user is None or password is None or submit is None:
+    if user is None or password is None:
         return None
+    if submit is None:
+        # Some BAS login pages submit via Enter key and expose no stable submit control.
+        submit = password
     return (user, password, submit)
 
 

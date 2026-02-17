@@ -1,6 +1,6 @@
 # Whistleblower
 
-[![License: AGPLv3](https://img.shields.io/badge/License-AGPLv3-blue.svg)](LICENSE)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/Python-3.11%2B-blue.svg)](https://www.python.org/)
 [![Docker](https://img.shields.io/badge/Docker-ready-0db7ed.svg)](https://www.docker.com/)
 [![Status](https://img.shields.io/badge/Status-Alpha-orange.svg)](#current-status)
@@ -9,7 +9,7 @@
 
 **Whistleblower** is a read-only watchdog for building automation systems (really any web-based control system).
 
-It logs into whatever web interface you've got (Niagara, Metasys, Tracer, Honeywell, Siemens, Distech, PLC, SCADA, janky custom shit—doesn't matter), navigates the graphics/dashboards, and grabs what the operator actually sees: screenshots, DOM text, element states.
+It logs into whatever web interface you've got (any BAS vendor, PLC, SCADA, janky custom system—doesn't matter), navigates the graphics/dashboards, and grabs what the operator actually sees: screenshots, DOM text, element states.
 
 The goal: catch when the pretty pictures lie about what's really happening in the building. No assumptions, no deep integrations—just evidence.
 
@@ -40,7 +40,7 @@ Intentionally **read-only** and **vendor-agnostic**. Works on whatever crap UI t
 
 - ❌ Setpoint changes or control actions
 - ❌ BACnet/Modbus/Lon protocol stacks
-- ❌ Niagara SDKs, vendor APIs, or deep integrations
+- ❌ Vendor SDKs, proprietary APIs, or deep integrations
 - ❌ Cloud uploads, telemetry, or phoning home
 - ❌ Automatic alerting (yet—coming after reliable capture)
 
@@ -70,7 +70,7 @@ Whistleblower/
 ├── data/                     # Runtime output (screenshots, DOM, etc.)
 │   └── .gitkeep
 ├── README.md
-└── LICENSE                   # AGPL-3.0
+└── LICENSE                   # MIT
 ```
 
 - `sites/` → per-site JSON configs (URLs, creds, login selectors, pages to hit)
@@ -190,13 +190,13 @@ BAS UIs vary wildly—some need delays, some have iframes, some throw modals. Tw
 If the UI is JS-driven and hard to script from static URLs, record your click path and pull selectors:
 
 ```bash
-npx playwright codegen https://tracersynchronydemo.trane.com/hui/index.html --viewport-size 1920,1080
+npx playwright codegen https://your-bas-host.example.com/index.html --viewport-size 1920,1080
 ```
 
 Useful variant (save script while recording):
 
 ```bash
-npx playwright codegen https://tracersynchronydemo.trane.com/hui/index.html --viewport-size 1920,1080 -o codegen-session.ts
+npx playwright codegen https://your-bas-host.example.com/index.html --viewport-size 1920,1080 -o codegen-session.ts
 ```
 
 Use the generated click selectors in your site config under `watch[].pre_click_steps`.
@@ -341,24 +341,10 @@ And one run-level file:
 
 ---
 
-## 📜 License & Philosophy: Keeping Whistleblower Free Forever
+## 📜 License
 
-🦅
+Whistleblower is released under the **MIT License**.
 
-Whistleblower is released under the **GNU Affero General Public License v3.0 (AGPL-3.0)**.
+You are free to use, modify, and distribute this software for any purpose, including commercial use, without restriction. See [LICENSE](./LICENSE) for the full license text.
 
-This isn't just a license—it's a deliberate choice to protect the core mission of this project:
-
-- **Freedom first, always.** Anyone can use, study, modify, and share Whistleblower (the four essential freedoms of free software).
-- **No closed-source exploitation.** If you modify or extend it—even just to run it as a service over the network (SaaS/hosted version)—you **must** release your changes under the same AGPL terms. No hiding improvements behind paywalls or proprietary forks.
-- **Closing the loophole.** Unlike permissive licenses (MIT, Apache 2.0), AGPL ensures that if someone offers Whistleblower as a web service, users can still get the source code. This prevents big companies or bad actors from taking the work, monetizing it silently, and locking away contributions that should benefit everyone.
-- **Built to stay open.** The point of Whistleblower is to be a free, trustworthy, community-driven tool for evidence capture and analysis—without gatekeepers. AGPL enforces that promise with legal teeth: any derivative must remain free and open, forever.
-
-If you're looking for something you can close-source or sell without giving back: this isn't it.  
-If you believe in software that stays free as it grows and evolves: welcome—this license is for you.
-
-Full license text: [LICENSE](./LICENSE)  
-More on AGPL: https://www.gnu.org/licenses/agpl-3.0.html  
-Copyleft philosophy (GNU): https://www.gnu.org/philosophy/copyleft.en.html
-
-Contributions welcome—under AGPL terms, of course.
+Contributions welcome.

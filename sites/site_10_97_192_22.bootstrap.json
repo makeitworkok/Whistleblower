@@ -1,6 +1,6 @@
 {
-  "name": "one_line",
-  "base_url": "https://demo.inductiveautomation.com/data/perspective/client/data-center-demo/single-line",
+  "name": "site_10_97_192_22",
+  "base_url": "https://10.97.192.22",
   "ignore_https_errors": true,
   "login_attempts": 2,
   "viewport": {
@@ -8,8 +8,8 @@
     "height": 1080
   },
   "login": {
-    "username": "demo",
-    "password": "demo",
+    "username": "REPLACE_ME",
+    "password": "REPLACE_ME",
     "user_selector": "#username",
     "pass_selector": "#password",
     "submit_selector": "button[type='submit']",
@@ -18,7 +18,7 @@
   "watch": [
     {
       "name": "target_1",
-      "url": "https://demo.inductiveautomation.com/data/perspective/client/data-center-demo/single-line",
+      "url": "https://10.97.192.22",
       "root_selector": "body",
       "settle_ms": 10000,
       "screenshot_full_page": false

@@ -1,64 +1,88 @@
-# 🗺️ Whistleblower Roadmap
+# Whistleblower Roadmap
 
-## 🎯 Milestones
+Last updated: 2026-02-19
 
-- ✅ `M1` (Done): login + capture artifacts
-- 🔧 `M2` (In Progress): baseline + diff
-- 📐 `M3` (Planned): deterministic rules engine for "graphics lying"
-- 🧠 `M4` (Planned): optional local narration (Ollama/AnythingLLM)
+## Milestones
 
-## 🔗 Dependency Flow
+- `M1` Done: read-only capture foundation (`whistleblower.py`)
+- `M2` Done: operator workflow layer (`bootstrap_recorder.py`, `ui_app.py`, `analyze_capture.py`)
+- `M3` In Progress: deterministic diff artifacts between runs
+- `M4` Planned: deterministic rules engine for mismatch detection
+- `M5` Planned: packaging + operator-ready deployment (Windows track)
+- `M6` Planned: optional local narration over deterministic findings
 
-- `M1 -> M2 -> M3 -> M4`
-- Windows packaging track runs in parallel, but only hardens after `M2` reliability is stable.
+## Dependency Flow
 
-## ✅ Exit Criteria
+- `M1 -> M2 -> M3 -> M4 -> M6`
+- `M5` runs in parallel, with hardening tied to `M3` capture reliability
 
-### ✅ M1 Exit Criteria (Complete)
+## Exit Criteria
+
+### `M1` Done Criteria
 
 - Repeatable login + navigation on representative configs.
 - Per-target artifacts written each run: `screenshot.png`, `dom.json`, `meta.json`.
 - Failures produce actionable error output.
 
-### 🔧 M2 Exit Criteria (Current Focus)
+### `M2` Done Criteria
+
+- Bootstrap recorder generates starter config + step suggestions.
+- Local UI supports:
+  - Bootstrap recording
+  - One-off capture runs
+  - Scheduled capture runs
+  - Run analysis (combined or per-page)
+- Analysis supports OpenAI and xAI/Grok providers with run summary output.
+
+### `M3` In Progress Criteria
 
 - For two runs of the same site/target, produce deterministic diff output.
-- Add per-target `change_report.json` with at least content changes (DOM/text/value deltas), a visual change signal (hash or image-diff summary), and confidence/quality flags for partial captures.
+- Add per-target `change_report.json` with:
+  - DOM/text/value delta summary
+  - visual delta signal (hash or image diff summary)
+  - confidence/quality flags for partial captures
 - Diff behavior is stable across at least 2 representative configs.
 
-### 📐 M3 Exit Criteria
+### `M4` Planned Criteria
 
-- Rules consume captured/diff artifacts without mutating source data.
+- Rules consume capture/diff artifacts without mutating source data.
 - Initial deterministic rule pack implemented (small, high-value set).
-- Rule output clearly separates `finding`, `evidence`, `severity`, and `rule_id`.
+- Rule output includes `rule_id`, `severity`, `finding`, `evidence`.
 
-### 🧠 M4 Exit Criteria
+### `M5` Planned Criteria
+
+- CLI smoke-tested on clean Windows machine.
+- Minimal operator workflow packaging validated (config in, artifacts out).
+- Installer/runtime docs kept in sync with shipped behavior.
+
+### `M6` Planned Criteria
 
 - Local narration is optional and off by default.
-- Narration only summarizes deterministic findings/evidence.
-- No cloud dependency required for core operation.
+- Narration only summarizes deterministic findings/evidence from rules/diffs.
+- Core capture/diff/rule path remains cloud-optional.
 
-## 🛠️ Workstreams (All Active, Different Intensity)
+## Workstreams
 
-- Core reliability (`M2`) is default stream and highest priority.
-- Rules stream (`M3`) starts thin, using current artifacts to validate rule shape early.
-- Packaging stream runs as constrained spikes per `docs/windows-packaging-plan.md`.
+- Capture reliability hardening remains highest priority.
+- Diff/rules stream (`M3`/`M4`) is the main product-development path.
+- Packaging stream follows `docs/windows-packaging-plan.md` in constrained spikes.
 
-## ⏱️ Now / Next / Later
+## Now / Next / Later
 
-### 🟢 Now
+### Now
 
-- Implement thin `M2` vertical slice: compare two runs for one target, output one `change_report.json`, and verify deterministic behavior on existing demo runs.
-- Keep capture schema stable while this lands.
+- Land thin `M3` vertical slice for one target with deterministic outputs.
+- Keep capture artifact schema stable while diff format is introduced.
+- Continue reliability fixes for hash-routed/loading-prone BAS views.
 
-### 🟡 Next
+### Next
 
-- Expand `M2` from one target to full run/site coverage.
-- Stand up `M3` thin rule set on top of diff outputs.
-- Execute Windows packaging Phase 1 smoke test (CLI-only on clean Windows machine).
+- Expand diff coverage from one target to full run/site coverage.
+- Stand up initial deterministic rules on top of diff outputs.
+- Run Windows packaging Phase 1 CLI smoke test on a clean machine.
 
-### 🔵 Later
+### Later
 
-- Grow deterministic rule library based on field feedback.
-- Add optional local narration for findings (`M4`).
-- Move packaging from smoke test to minimal GUI + installer hardening.
+- Expand rule library from field feedback and real failure patterns.
+- Harden operator packaging path (UI + installer quality).
+- Add optional local narration over deterministic findings.

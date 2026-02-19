@@ -305,8 +305,8 @@ Mark this complete before cutting `v0.1.0-alpha`:
 - [x] `bootstrap_recorder.py` generates `*.bootstrap.json` and `*.steps.json`.
 - [x] `analyze_capture.py` emits `analysis.md`, `analysis.json`, and `analysis_summary.json`.
 - [x] `ui_app.py` supports bootstrap, one-off capture, scheduling, and analysis.
-- [ ] Private secrets are not committed (`sites/*.local.json`, `.private/*` ignored).
-- [ ] README quick start and config schema match real CLI behavior.
+- [x] Private secrets are not committed (`sites/*.local.json`, `.private/*` ignored).
+- [x] README quick start and config schema match real CLI behavior.
 
 ---
 

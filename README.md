@@ -50,6 +50,12 @@ If the graphics are bullshitting you, Whistleblower just documents the bullshit.
 
 ---
 
+## ⚠️ Read-only access disclaimer
+
+Whistleblower is intended to be read-only. Configure the BAS account it uses with **read-only permissions** only. Do not grant write, override, or operator control rights. You are responsible for ensuring the credentials and access level are safe for a monitoring-only tool.
+
+---
+
 ## 🧰 Requirements
 
 - Python 3.11+ (`whistleblower.py`, `ui_app.py`, `bootstrap_recorder.py`, `analyze_capture.py`)
@@ -208,7 +214,11 @@ Key fields you'll need:
   - `name`, `url`, `root_selector`
   - `settle_ms`
   - `screenshot_full_page` or `screenshot_selector`
-  - optional `pre_click_selector`, `pre_click_wait_ms`, `pre_click_steps`
+   - optional `pre_click_selector`, `pre_click_wait_ms`, `pre_click_steps`
+   - optional `prefer_url_on_pre_click_change` (default `true`)
+
+Note: ReactJS frontends are a work in progress. Navigation selectors can be volatile in
+SPAs, and we are still tuning the recorder/runner strategy for those UIs.
 
 BAS UIs vary wildly—some need delays, some have iframes, some throw modals. Tweak selectors and add waits in code as needed for your target.
 

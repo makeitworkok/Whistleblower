@@ -143,6 +143,32 @@ Whistleblower/
 
 ---
 
+## 🖥️ Local UI (recommended for non-devs)
+
+Run the local web UI to manage bootstrap recording, captures, schedules, and analysis.
+
+```bash
+python3 ui_app.py
+```
+
+Then open:
+`http://127.0.0.1:8787`
+
+What the UI provides:
+- Bootstrap recorder (build a starter config and suggested steps)
+- Main capture (run once)
+- Scheduled capture (run every N minutes)
+- Analysis (single combined analysis per run, or per-page if desired)
+
+### Analysis API key
+
+Analysis requires an API key. You can:
+- Set `OPENAI_API_KEY` or `XAI_API_KEY` in your environment
+- Or place it in `.private/openai.env`
+- Or paste it into the UI before running analysis
+
+---
+
 ## 📁 Output Example
 
 After a successful run:

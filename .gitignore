@@ -1,8 +1,13 @@
 # runtime data
 data/*
 !data/.gitkeep
+!data/example/
 
-# private site configs
+# private site configs - ignore all, then allow examples
+sites/*.json
+!sites/example.json
+!sites/example_*.*
+# re-ignore private configs even if they match above patterns
 sites/local.json
 sites/*.local.json
 

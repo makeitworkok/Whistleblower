@@ -56,6 +56,16 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--data-dir", default="data", help="Root data directory. Default: data")
     parser.add_argument("--site", default=None, help="Site folder name under data/")
     parser.add_argument(
+        "--start-utc",
+        default=None,
+        help=("Analyze runs with timestamps >= this (ISO 8601 or YYYYMMDD-HHMMSS)."),
+    )
+    parser.add_argument(
+        "--end-utc",
+        default=None,
+        help=("Analyze runs with timestamps <= this (ISO 8601 or YYYYMMDD-HHMMSS)."),
+    )
+    parser.add_argument(
         "--provider",
         choices=["openai", "xai", "grok"],
         default=default_provider,
@@ -94,6 +104,16 @@ def parse_args() -> argparse.Namespace:
         help="Optional custom analysis prompt. If omitted, a default BAS-oriented prompt is used.",
     )
     parser.add_argument(
+        "--combine-run",
+        action="store_true",
+        help="Combine all targets in a run into a single analysis summary.",
+    )
+    parser.add_argument(
+        "--per-page",
+        action="store_true",
+        help="Analyze each page separately instead of combining.",
+    )
+    parser.add_argument(
         "--env-file",
         default=".private/openai.env",
         help="Optional env file for API keys/models/endpoints. Default: .private/openai.env",
@@ -103,6 +123,31 @@ def parse_args() -> argparse.Namespace:
 
 def utc_now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
+
+
+def parse_iso_utc(value: str | None) -> datetime | None:
+    if not value:
+        return None
+    raw = value.strip()
+    try:
+        if raw.endswith("Z"):
+            raw = raw[:-1] + "+00:00"
+        parsed = datetime.fromisoformat(raw)
+    except ValueError:
+        try:
+            parsed = datetime.strptime(raw, "%Y%m%d-%H%M%S")
+        except ValueError:
+            return None
+    if parsed.tzinfo is None:
+        return parsed.replace(tzinfo=timezone.utc)
+    return parsed.astimezone(timezone.utc)
+
+
+def parse_run_dir_timestamp(run_dir: Path) -> datetime | None:
+    try:
+        return datetime.strptime(run_dir.name, "%Y%m%d-%H%M%S").replace(tzinfo=timezone.utc)
+    except ValueError:
+        return None
 
 
 def find_latest_run(data_dir: Path, site: str | None) -> Path:
@@ -125,6 +170,38 @@ def find_latest_run(data_dir: Path, site: str | None) -> Path:
     if not candidates:
         raise ValueError(f"No runs found under: {data_dir}")
     return sorted(candidates)[-1]
+
+
+def find_runs_in_range(
+    data_dir: Path,
+    site: str | None,
+    start: datetime | None,
+    end: datetime | None,
+) -> list[Path]:
+    if not data_dir.exists():
+        raise ValueError(f"Data directory not found: {data_dir}")
+    if site is not None:
+        site_dirs = [data_dir / site]
+    else:
+        site_dirs = [p for p in data_dir.iterdir() if p.is_dir()]
+
+    runs: list[tuple[datetime, Path]] = []
+    for site_dir in site_dirs:
+        if not site_dir.exists():
+            continue
+        for run_dir in site_dir.iterdir():
+            if not run_dir.is_dir():
+                continue
+            ts = parse_run_dir_timestamp(run_dir)
+            if ts is None:
+                continue
+            if start is not None and ts < start:
+                continue
+            if end is not None and ts > end:
+                continue
+            runs.append((ts, run_dir))
+
+    return [item[1] for item in sorted(runs, key=lambda item: item[0])]
 
 
 def b64_data_url(path: Path) -> str:
@@ -157,8 +234,15 @@ def call_responses_api(
     model: str,
     system_prompt: str,
     user_text: str,
-    image_data_url: str,
+    image_data_url: str | None,
+    image_data_urls: list[str] | None = None,
 ) -> str:
+    content: list[dict[str, Any]] = [{"type": "input_text", "text": user_text}]
+    if image_data_urls:
+        content.extend([{"type": "input_image", "image_url": url} for url in image_data_urls])
+    elif image_data_url:
+        content.append({"type": "input_image", "image_url": image_data_url})
+
     request_payload = {
         "model": model,
         "input": [
@@ -168,10 +252,7 @@ def call_responses_api(
             },
             {
                 "role": "user",
-                "content": [
-                    {"type": "input_text", "text": user_text},
-                    {"type": "input_image", "image_url": image_data_url},
-                ],
+                "content": content,
             },
         ],
     }
@@ -232,6 +313,43 @@ def default_user_prompt(meta: dict[str, Any], dom: dict[str, Any], max_dom_chars
     return "\n".join(lines)
 
 
+def default_combined_prompt(
+    run_dir: Path,
+    metas: list[dict[str, Any]],
+    doms: list[dict[str, Any]],
+    max_dom_chars: int,
+) -> str:
+    lines = [
+        "Analyze this set of dashboard captures for operational insight and anomalies.",
+        "Return markdown with these sections:",
+        "1. Summary (3-6 bullets, operator-facing, plain language)",
+        "2. Snapshot (per page)",
+        "3. Potential issues",
+        "4. Evidence",
+        "5. Suggested checks",
+        "",
+        f"Run directory: {run_dir}",
+        "",
+    ]
+    for index, meta in enumerate(metas):
+        dom_text = str(doms[index].get("text") or "")
+        dom_excerpt = dom_text[:max_dom_chars]
+        lines.extend(
+            [
+                f"Page {index + 1}:",
+                f"- target_name: {meta.get('target_name', '')}",
+                f"- target_url: {meta.get('target_url', '')}",
+                f"- title: {meta.get('title', '')}",
+                f"- url_after_navigation: {meta.get('url_after_navigation', '')}",
+                f"- readiness_error: {meta.get('readiness_error', '')}",
+                f"- DOM text excerpt (first {len(dom_excerpt)} chars):",
+                dom_excerpt if dom_excerpt else "(no DOM text)",
+                "",
+            ]
+        )
+    return "\n".join(lines)
+
+
 def analyze_target(
     *,
     target_dir: Path,
@@ -285,6 +403,70 @@ def analyze_target(
     }
 
 
+def analyze_run_combined(
+    *,
+    run_dir: Path,
+    endpoint: str,
+    api_key: str,
+    model: str,
+    max_dom_chars: int,
+    custom_prompt: str | None,
+) -> dict[str, Any]:
+    target_dirs = discover_target_dirs(run_dir)
+    if not target_dirs:
+        raise ValueError(f"No target capture directories found in: {run_dir}")
+
+    metas: list[dict[str, Any]] = []
+    doms: list[dict[str, Any]] = []
+    images: list[str] = []
+
+    for target_dir in target_dirs:
+        screenshot_path = target_dir / "screenshot.png"
+        dom_path = target_dir / "dom.json"
+        meta_path = target_dir / "meta.json"
+        if not screenshot_path.exists() or not dom_path.exists() or not meta_path.exists():
+            continue
+        doms.append(json.loads(dom_path.read_text(encoding="utf-8")))
+        metas.append(json.loads(meta_path.read_text(encoding="utf-8")))
+        images.append(b64_data_url(screenshot_path))
+
+    if not metas:
+        raise ValueError(f"No analyzable targets found in: {run_dir}")
+
+    user_prompt = custom_prompt or default_combined_prompt(run_dir, metas, doms, max_dom_chars)
+    analysis_text = call_responses_api(
+        endpoint=endpoint,
+        api_key=api_key,
+        model=model,
+        system_prompt=default_system_prompt(),
+        user_text=user_prompt,
+        image_data_url=None,
+        image_data_urls=images,
+    )
+
+    combined_md = run_dir / "analysis_combined.md"
+    combined_json = run_dir / "analysis_combined.json"
+    combined_md.write_text(analysis_text + "\n", encoding="utf-8")
+    combined_json.write_text(
+        json.dumps(
+            {
+                "analyzed_at_utc": utc_now_iso(),
+                "model": model,
+                "run_dir": str(run_dir),
+                "pages_analyzed": len(metas),
+                "analysis_md": combined_md.name,
+            },
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
+    return {
+        "run_dir": str(run_dir),
+        "analysis_md": str(combined_md),
+        "analysis_json": str(combined_json),
+    }
+
+
 def discover_target_dirs(run_dir: Path) -> list[Path]:
     return sorted(
         [
@@ -335,29 +517,67 @@ def main() -> int:
             return 1
 
     try:
-        run_dir = Path(args.run_dir) if args.run_dir else find_latest_run(Path(args.data_dir), args.site)
-        if not run_dir.exists():
-            raise ValueError(f"Run directory not found: {run_dir}")
-        target_dirs = discover_target_dirs(run_dir)
-        if not target_dirs:
-            raise ValueError(f"No target capture directories found in: {run_dir}")
+        start_utc = parse_iso_utc(args.start_utc)
+        end_utc = parse_iso_utc(args.end_utc)
+        if args.start_utc and start_utc is None:
+            raise ValueError(f"Invalid --start-utc value: {args.start_utc}")
+        if args.end_utc and end_utc is None:
+            raise ValueError(f"Invalid --end-utc value: {args.end_utc}")
+        if start_utc and end_utc and start_utc > end_utc:
+            raise ValueError("--start-utc must be <= --end-utc")
 
-        results = []
-        for target_dir in target_dirs:
-            result = analyze_target(
-                target_dir=target_dir,
-                endpoint=endpoint,
-                api_key=api_key,
-                model=model,
-                max_dom_chars=args.max_dom_chars,
-                custom_prompt=args.prompt,
-            )
-            results.append(result)
+        if args.run_dir:
+            run_dirs = [Path(args.run_dir)]
+        elif start_utc or end_utc:
+            run_dirs = find_runs_in_range(Path(args.data_dir), args.site, start_utc, end_utc)
+            if not run_dirs:
+                raise ValueError("No runs found in the requested time range.")
+        else:
+            run_dirs = [find_latest_run(Path(args.data_dir), args.site)]
 
-        run_analysis_path = run_dir / "analysis_summary.json"
-        run_analysis_path.write_text(
-            json.dumps(
-                {
+        all_run_summaries = []
+        for run_dir in run_dirs:
+            if not run_dir.exists():
+                raise ValueError(f"Run directory not found: {run_dir}")
+
+            combine_run = args.combine_run or not args.per_page
+            if combine_run:
+                combined = analyze_run_combined(
+                    run_dir=run_dir,
+                    endpoint=endpoint,
+                    api_key=api_key,
+                    model=model,
+                    max_dom_chars=args.max_dom_chars,
+                    custom_prompt=args.prompt,
+                )
+                run_summary = {
+                    "analyzed_at_utc": utc_now_iso(),
+                    "run_dir": str(run_dir),
+                    "provider": provider,
+                    "model": model,
+                    "endpoint": endpoint,
+                    "api_key_env": api_key_env,
+                    "combined": True,
+                    "combined_analysis": combined,
+                }
+            else:
+                target_dirs = discover_target_dirs(run_dir)
+                if not target_dirs:
+                    raise ValueError(f"No target capture directories found in: {run_dir}")
+
+                results = []
+                for target_dir in target_dirs:
+                    result = analyze_target(
+                        target_dir=target_dir,
+                        endpoint=endpoint,
+                        api_key=api_key,
+                        model=model,
+                        max_dom_chars=args.max_dom_chars,
+                        custom_prompt=args.prompt,
+                    )
+                    results.append(result)
+
+                run_summary = {
                     "analyzed_at_utc": utc_now_iso(),
                     "run_dir": str(run_dir),
                     "provider": provider,
@@ -366,16 +586,42 @@ def main() -> int:
                     "api_key_env": api_key_env,
                     "targets_analyzed": len(results),
                     "targets": results,
-                },
-                indent=2,
-            ),
-            encoding="utf-8",
-        )
+                }
+
+            run_analysis_path = run_dir / "analysis_summary.json"
+            run_analysis_path.write_text(json.dumps(run_summary, indent=2), encoding="utf-8")
+            all_run_summaries.append(run_summary)
+
+        if len(all_run_summaries) > 1 or start_utc or end_utc:
+            range_root = Path(args.data_dir)
+            if args.site:
+                range_root = range_root / args.site
+            range_summary_path = range_root / "analysis_range_summary.json"
+            range_summary_path.write_text(
+                json.dumps(
+                    {
+                        "analyzed_at_utc": utc_now_iso(),
+                        "provider": provider,
+                        "model": model,
+                        "endpoint": endpoint,
+                        "api_key_env": api_key_env,
+                        "start_utc": start_utc.isoformat() if start_utc else None,
+                        "end_utc": end_utc.isoformat() if end_utc else None,
+                        "runs_analyzed": len(all_run_summaries),
+                        "runs": all_run_summaries,
+                    },
+                    indent=2,
+                ),
+                encoding="utf-8",
+            )
     except Exception as exc:  # noqa: BLE001
         print(f"ERROR: {exc}", file=sys.stderr)
         return 1
 
-    print(f"Analysis completed: {run_dir}")
+    if len(run_dirs) == 1:
+        print(f"Analysis completed: {run_dirs[0]}")
+    else:
+        print(f"Analysis completed for {len(run_dirs)} runs.")
     return 0
 
 

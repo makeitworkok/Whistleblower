@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -318,6 +319,8 @@ def build_step_suggestions(events: list[dict[str, Any]]) -> list[dict[str, Any]]
 
 def main() -> int:
     args = parse_args()
+    if not args.url.startswith(("http://", "https://")):
+        args.url = "https://" + args.url
     if args.viewport_width < 1 or args.viewport_height < 1:
         raise SystemExit("ERROR: --viewport-width and --viewport-height must be >= 1.")
 
@@ -334,7 +337,23 @@ def main() -> int:
     summary_path = run_root / "summary.json"
 
     with sync_playwright() as p:
-        browser = p.chromium.launch(headless=False)
+        # On Windows, try Edge first (usually pre-installed), then Chromium
+        browser = None
+        if sys.platform == "win32":
+            for channel in ["msedge", None]:
+                try:
+                    if channel:
+                        browser = p.chromium.launch(headless=False, channel=channel)
+                    else:
+                        browser = p.chromium.launch(headless=False)
+                    break
+                except Exception:
+                    continue
+            if browser is None:
+                raise RuntimeError("Could not launch browser. Please install Edge or run: py -m playwright install chromium")
+        else:
+            browser = p.chromium.launch(headless=False)
+        
         context_options: dict[str, Any] = {
             "ignore_https_errors": bool(args.ignore_https_errors),
             "viewport": {"width": args.viewport_width, "height": args.viewport_height},
@@ -387,7 +406,13 @@ def main() -> int:
         print("1) Perform login and navigation exactly as an operator would.")
         print("2) Do not trigger control changes (read-only workflow only).")
         print("3) Return here and press Enter to finish and write outputs.")
-        input("Press Enter when finished...")
+        print("Press Enter when finished...", flush=True)
+        
+        # Use stdin.readline() instead of input() for piped stdin compatibility
+        try:
+            sys.stdin.readline()
+        except (EOFError, OSError):
+            pass
 
         page.screenshot(path=str(final_screenshot_path), full_page=False)
 

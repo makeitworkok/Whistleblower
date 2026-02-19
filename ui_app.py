@@ -29,6 +29,14 @@ LAST_CAPTURE_OUTPUT = ""
 LAST_SCHEDULE_OUTPUT = ""
 LAST_ANALYSIS_OUTPUT = ""
 
+CAPTURE_THREAD: threading.Thread | None = None
+CAPTURE_STATUS: dict[str, Any] = {
+  "running": False,
+  "last_started_utc": "",
+  "last_finished_utc": "",
+  "last_result": "",
+}
+
 SCHEDULE_THREAD: threading.Thread | None = None
 SCHEDULE_STOP = threading.Event()
 SCHEDULE_STATUS: dict[str, Any] = {
@@ -225,6 +233,46 @@ def run_capture_command(cmd: list[str], env: dict[str, str] | None = None) -> tu
   return result.returncode, output
 
 
+def run_capture_streaming(cmd: list[str], env: dict[str, str] | None = None) -> tuple[int, str]:
+  proc = subprocess.Popen(
+    cmd,
+    stdout=subprocess.PIPE,
+    stderr=subprocess.STDOUT,
+    text=True,
+    bufsize=1,
+    env=env,
+  )
+  output_lines: list[str] = []
+  if proc.stdout is not None:
+    for line in proc.stdout:
+      output_lines.append(line)
+      with STATE_LOCK:
+        # Keep the UI log responsive without growing unbounded.
+        LAST_CAPTURE_OUTPUT = "".join(output_lines[-400:])
+  return_code = proc.wait()
+  output = "".join(output_lines)
+  return return_code, output
+
+
+def capture_worker(cmd: list[str]) -> None:
+  global LAST_CAPTURE_OUTPUT
+  started = datetime.now(timezone.utc)
+  with STATE_LOCK:
+    CAPTURE_STATUS["running"] = True
+    CAPTURE_STATUS["last_started_utc"] = started.isoformat()
+    CAPTURE_STATUS["last_result"] = ""
+    LAST_CAPTURE_OUTPUT = "Capture running..."
+
+  return_code, output = run_capture_streaming(cmd)
+  finished = datetime.now(timezone.utc)
+
+  with STATE_LOCK:
+    LAST_CAPTURE_OUTPUT = output or "(no output)"
+    CAPTURE_STATUS["running"] = False
+    CAPTURE_STATUS["last_finished_utc"] = finished.isoformat()
+    CAPTURE_STATUS["last_result"] = "ok" if return_code == 0 else "error"
+
+
 def schedule_loop(cmd: list[str], interval_minutes: int) -> None:
   global LAST_SCHEDULE_OUTPUT
   interval_seconds = max(1, interval_minutes) * 60
@@ -280,6 +328,7 @@ def render_page(message: str | None = None) -> str:
         bootstrap_log = "".join(BOOTSTRAP_LOG[-200:])
         last_bootstrap_output = LAST_BOOTSTRAP_OUTPUT
         last_capture_output = LAST_CAPTURE_OUTPUT
+    capture_status = CAPTURE_STATUS.copy()
     last_schedule_output = LAST_SCHEDULE_OUTPUT
     last_analysis_output = LAST_ANALYSIS_OUTPUT
     schedule_status = SCHEDULE_STATUS.copy()
@@ -318,6 +367,10 @@ def render_page(message: str | None = None) -> str:
     )
 
     schedule_status_text = "Running" if schedule_status.get("running") else "Idle"
+    capture_status_text = "Running" if capture_status.get("running") else "Idle"
+    capture_started = capture_status.get("last_started_utc") or "(none)"
+    capture_finished = capture_status.get("last_finished_utc") or "(none)"
+    capture_result = capture_status.get("last_result") or "(none)"
     schedule_action = (
       "<form method='POST' action='/stop_schedule'><button class='danger' type='submit'>Stop Schedule</button></form>"
       if schedule_status.get("running")
@@ -746,7 +799,13 @@ def render_page(message: str | None = None) -> str:
 
       <section class='card'>
         <h2>Manual Capture Logs</h2>
-        <pre>{html.escape(last_capture_output or "(no output yet)")}</pre>
+        <div class='status'>Status: <span id='cap_status'>{capture_status_text}</span></div>
+        <div class='status'>
+          <span>Started: <span id='cap_started'>{html.escape(str(capture_started))}</span></span>
+          <span>Finished: <span id='cap_finished'>{html.escape(str(capture_finished))}</span></span>
+          <span>Result: <span id='cap_result'>{html.escape(str(capture_result))}</span></span>
+        </div>
+        <pre id='cap_log'>{html.escape(last_capture_output or "(no output yet)")}</pre>
       </section>
 
       <section class='card'>
@@ -837,6 +896,29 @@ def render_page(message: str | None = None) -> str:
   }};
   capModeRadios.forEach((radio) => radio.addEventListener('change', toggleCapMode));
   toggleCapMode();
+
+  const refreshCaptureStatus = async () => {{
+    try {{
+      const response = await fetch('/capture-status');
+      if (!response.ok) {{
+        return;
+      }}
+      const data = await response.json();
+      const status = document.getElementById('cap_status');
+      const started = document.getElementById('cap_started');
+      const finished = document.getElementById('cap_finished');
+      const result = document.getElementById('cap_result');
+      const log = document.getElementById('cap_log');
+      if (status) status.textContent = data.running ? 'Running' : 'Idle';
+      if (started) started.textContent = data.last_started_utc || '(none)';
+      if (finished) finished.textContent = data.last_finished_utc || '(none)';
+      if (result) result.textContent = data.last_result || '(none)';
+      if (log) log.textContent = data.output || '(no output yet)';
+    }} catch (err) {{
+      console.error('Failed to refresh capture status', err);
+    }}
+  }};
+  setInterval(refreshCaptureStatus, 2000);
   </script>
 </body>
 </html>"""
@@ -904,6 +986,23 @@ class UIHandler(BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(payload.encode("utf-8"))
             return
+
+        if self.path == "/capture-status":
+          with STATE_LOCK:
+            payload = json.dumps(
+              {
+                "running": CAPTURE_STATUS.get("running", False),
+                "last_started_utc": CAPTURE_STATUS.get("last_started_utc", ""),
+                "last_finished_utc": CAPTURE_STATUS.get("last_finished_utc", ""),
+                "last_result": CAPTURE_STATUS.get("last_result", ""),
+                "output": LAST_CAPTURE_OUTPUT,
+              }
+            )
+          self.send_response(HTTPStatus.OK)
+          self.send_header("Content-Type", "application/json; charset=utf-8")
+          self.end_headers()
+          self.wfile.write(payload.encode("utf-8"))
+          return
 
         if self.path.startswith("/analysis"):
             parsed = urllib.parse.urlparse(self.path)
@@ -1039,18 +1138,24 @@ class UIHandler(BaseHTTPRequestHandler):
         self.render_with_message("Bootstrap recorder stopped.")
 
     def handle_run_capture(self, data: dict[str, list[str]]) -> None:
-        global LAST_CAPTURE_OUTPUT
+        global CAPTURE_THREAD, LAST_CAPTURE_OUTPUT
         cmd, error = build_capture_command(data)
         if cmd is None:
             self.render_with_message(error or "Unable to build capture command.")
             return
+        with STATE_LOCK:
+            if CAPTURE_THREAD is not None and CAPTURE_THREAD.is_alive():
+                self.render_with_message("Capture already running.")
+                return
+            LAST_CAPTURE_OUTPUT = "Starting capture..."
 
-        _, output = run_capture_command(cmd)
+        thread = threading.Thread(target=capture_worker, args=(cmd,), daemon=True)
+        thread.start()
 
         with STATE_LOCK:
-            LAST_CAPTURE_OUTPUT = output
+            CAPTURE_THREAD = thread
 
-        self.render_with_message("Capture complete.")
+        self.render_with_message("Capture started. Check logs below for progress.")
 
     def handle_start_schedule(self, data: dict[str, list[str]]) -> None:
         global SCHEDULE_THREAD

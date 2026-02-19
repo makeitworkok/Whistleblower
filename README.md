@@ -2,7 +2,6 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/Python-3.11%2B-blue.svg)](https://www.python.org/)
-[![Docker](https://img.shields.io/badge/Docker-ready-0db7ed.svg)](https://www.docker.com/)
 [![Status](https://img.shields.io/badge/Status-Alpha-orange.svg)](#current-status)
 
 > Read-only evidence capture for dashboards.
@@ -53,10 +52,9 @@ If the graphics are bullshitting you, Whistleblower just documents the bullshit.
 
 ## 🧰 Requirements
 
-- Docker (Linux/macOS/Windows) for containerized capture runs
-- Python 3.11+ for local tools (`ui_app.py`, `bootstrap_recorder.py`, `analyze_capture.py`)
+- Python 3.11+ (`whistleblower.py`, `ui_app.py`, `bootstrap_recorder.py`, `analyze_capture.py`)
 - Valid credentials for the BAS web interface you want to watch
-- Internet for the initial Docker build and only when using API-backed analysis providers
+- Internet for the initial dependency/browser install and only when using API-backed analysis providers
 
 ---
 
@@ -64,7 +62,6 @@ If the graphics are bullshitting you, Whistleblower just documents the bullshit.
 
 ```
 Whistleblower/
-├── Dockerfile
 ├── requirements.txt
 ├── whistleblower.py          # Main capture runner (Playwright automation)
 ├── bootstrap_recorder.py     # Records operator flow, generates starter config + steps
@@ -101,10 +98,11 @@ Whistleblower/
    mkdir -p data
    ```
 
-3. Build the image (first time takes a bit—downloads browser binaries)
+3. Install dependencies (first time only)
 
    ```bash
-   docker build -t whistleblower .
+   python3 -m pip install -r requirements.txt
+   python3 -m playwright install chromium
    ```
 
 4. Set up your private config (never commit this!)
@@ -117,31 +115,16 @@ Whistleblower/
 
 5. Run it
 
-   **Linux/macOS:**
+   **Linux/macOS/Windows (PowerShell/CMD):**
 
    ```bash
-   docker run --rm \
-     -v "$(pwd)/sites:/app/sites" \
-     -v "$(pwd)/data:/app/data" \
-     whistleblower --config /app/sites/my-site.json
-   ```
-
-   **Windows (PowerShell):**
-
-   ```powershell
-   docker run --rm `
-     -v "${PWD}\sites:/app/sites" `
-     -v "${PWD}\data:/app/data" `
-     whistleblower --config /app/sites/my-site.json
+   python3 whistleblower.py --config sites/my-site.json
    ```
 
 6. Optional (debug only): record the full interaction as video
 
    ```bash
-   docker run --rm \
-     -v "$(pwd)/sites:/app/sites" \
-     -v "$(pwd)/data:/app/data" \
-     whistleblower --config /app/sites/my-site.json --record-video
+   python3 whistleblower.py --config sites/my-site.json --record-video
    ```
 
    Video output is saved per run at:
@@ -285,12 +268,7 @@ actual login/navigation flow.
    export MY_SITE_USERNAME='your_user'
    export MY_SITE_PASSWORD='your_password'
 
-   docker run --rm \
-     -e MY_SITE_USERNAME \
-     -e MY_SITE_PASSWORD \
-     -v "$(pwd)/sites:/app/sites" \
-     -v "$(pwd)/data:/app/data" \
-     whistleblower --config /app/sites/my_site.local.json
+   python3 whistleblower.py --config sites/my_site.local.json
    ```
 
 ---
@@ -320,7 +298,7 @@ Current focus:
 
 Mark this complete before cutting `v0.1.0-alpha`:
 
-- [ ] `docker build -t whistleblower .` succeeds on a clean machine.
+- [ ] Local setup succeeds on a clean machine (`pip install -r requirements.txt` and `playwright install chromium`).
 - [ ] At least 2 representative site configs run successfully (default run, no video).
 - [ ] Each run writes `screenshot.png`, `dom.json`, `meta.json` per target.
 - [ ] `readiness_error` is `null` for baseline demo targets.

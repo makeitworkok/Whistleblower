@@ -16,7 +16,7 @@ The goal: catch when the pretty pictures lie about what's really happening in th
 No write access.  
 No drivers.  
 No vendor SDKs.  
-No cloud.  
+No cloud requirement for core capture.  
 No subscriptions.  
 
 Just local artifacts and receipts.
@@ -31,6 +31,7 @@ Just local artifacts and receipts.
   - Full-page screenshots
   - Visible DOM text + key element states (via CSS selectors you define)
 - Stores timestamped artifacts locally for manual review or future comparison
+- Includes optional post-capture analysis (`analyze_capture.py`) and a local control UI (`ui_app.py`)
 
 Intentionally **read-only** and **vendor-agnostic**. Works on whatever crap UI the system exposes via browser.
 
@@ -41,8 +42,10 @@ Intentionally **read-only** and **vendor-agnostic**. Works on whatever crap UI t
 - ❌ Setpoint changes or control actions
 - ❌ BACnet/Modbus/Lon protocol stacks
 - ❌ Vendor SDKs, proprietary APIs, or deep integrations
-- ❌ Cloud uploads, telemetry, or phoning home
+- ❌ Automatic cloud telemetry or background phoning home
 - ❌ Automatic alerting (yet—coming after reliable capture)
+
+Optional analysis mode sends evidence to your chosen model provider only when you run it.
 
 If the graphics are bullshitting you, Whistleblower just documents the bullshit. What you do next is on you.
 
@@ -50,11 +53,10 @@ If the graphics are bullshitting you, Whistleblower just documents the bullshit.
 
 ## 🧰 Requirements
 
-- Docker (Linux/macOS/Windows)
+- Docker (Linux/macOS/Windows) for containerized capture runs
+- Python 3.11+ for local tools (`ui_app.py`, `bootstrap_recorder.py`, `analyze_capture.py`)
 - Valid credentials for the BAS web interface you want to watch
-- Internet only for the initial Docker build (pulls Python + Playwright deps)
-
-That's literally it.
+- Internet for the initial Docker build and only when using API-backed analysis providers
 
 ---
 
@@ -64,11 +66,17 @@ That's literally it.
 Whistleblower/
 ├── Dockerfile
 ├── requirements.txt
-├── whistleblower.py          # The main script (Playwright automation)
+├── whistleblower.py          # Main capture runner (Playwright automation)
+├── bootstrap_recorder.py     # Records operator flow, generates starter config + steps
+├── analyze_capture.py        # Optional LLM analysis for captured runs
+├── ui_app.py                 # Local web UI (bootstrap/capture/schedule/analysis)
 ├── sites/
 │   └── example.json          # Template—copy & edit for your site
 ├── data/                     # Runtime output (screenshots, DOM, etc.)
 │   └── .gitkeep
+├── docs/
+│   ├── ROADMAP.md
+│   └── CHANGELOG.md
 ├── README.md
 └── LICENSE                   # MIT
 ```
@@ -147,6 +155,15 @@ Whistleblower/
 
 Run the local web UI to manage bootstrap recording, captures, schedules, and analysis.
 
+Install local dependencies first:
+
+```bash
+python3 -m pip install -r requirements.txt
+python3 -m playwright install chromium
+```
+
+Then start the UI:
+
 ```bash
 python3 ui_app.py
 ```
@@ -158,7 +175,8 @@ What the UI provides:
 - Bootstrap recorder (build a starter config and suggested steps)
 - Main capture (run once)
 - Scheduled capture (run every N minutes)
-- Analysis (single combined analysis per run, or per-page if desired)
+- Analysis (single combined analysis per run, or per-page)
+- Time-range analysis (analyze runs between start/end UTC filters)
 
 ### Analysis API key
 
@@ -279,18 +297,24 @@ actual login/navigation flow.
 
 ## 🧪 Current Status
 
-Early alpha—MVP capture works (login → nav → screenshot/DOM dump), tested on a private test site with real screenshots landing in data/.
+Alpha, but beyond capture-only MVP.
 
-Focus right now: rock-solid navigation and capture reliability across flaky UIs.
+Implemented and in active use:
 
-Next up (no hard dates):
+- Read-only capture pipeline (`whistleblower.py`) with per-target artifacts
+- Bootstrap flow recorder (`bootstrap_recorder.py`) for starter configs and click-step generation
+- Local operations UI (`ui_app.py`) for bootstrap, one-off capture, scheduling, and analysis
+- Post-capture LLM analysis (`analyze_capture.py`) with:
+  - OpenAI or xAI/Grok providers
+  - Combined run analysis or per-page analysis
+  - Start/end UTC filtering for batch analysis
 
-- Basic change detection (compare runs)
-- Simple rule-based "whistles" (e.g., fan icon says running but temp dropping)
-- Optional local LLM narration of diffs (still read-only)
-- Windows non-dev packaging track: `docs/windows-packaging-plan.md`
+Current focus:
 
-No rush. Build what works.
+- Harden capture reliability across flaky/hash-routed BAS UIs
+- Add deterministic diff artifacts between runs
+- Layer deterministic rule checks on top of captures/diffs
+- Continue Windows non-dev packaging track: `docs/windows-packaging-plan.md`
 
 ## 🚦 Alpha Exit Checklist
 
@@ -300,8 +324,9 @@ Mark this complete before cutting `v0.1.0-alpha`:
 - [ ] At least 2 representative site configs run successfully (default run, no video).
 - [ ] Each run writes `screenshot.png`, `dom.json`, `meta.json` per target.
 - [ ] `readiness_error` is `null` for baseline demo targets.
-- [ ] `bootstrap_recorder.py` generates usable `*.bootstrap.json` and `*.steps.json`.
-- [ ] `analyze_capture.py` produces `analysis.md` + `analysis_summary.json`.
+- [x] `bootstrap_recorder.py` generates `*.bootstrap.json` and `*.steps.json`.
+- [x] `analyze_capture.py` emits `analysis.md`, `analysis.json`, and `analysis_summary.json`.
+- [x] `ui_app.py` supports bootstrap, one-off capture, scheduling, and analysis.
 - [ ] Private secrets are not committed (`sites/*.local.json`, `.private/*` ignored).
 - [ ] README quick start and config schema match real CLI behavior.
 
@@ -356,6 +381,21 @@ Provider options:
 
    ```bash
    python3 analyze_capture.py --run-dir data/ignition_demo/20260212-174539
+   ```
+
+5. Analyze a UTC time window across runs (optionally scoped by `--site`):
+
+   ```bash
+   python3 analyze_capture.py \
+     --site ignition_demo \
+     --start-utc 2026-02-01T00:00:00Z \
+     --end-utc 2026-02-19T23:59:59Z
+   ```
+
+6. Force per-page output instead of a combined run summary:
+
+   ```bash
+   python3 analyze_capture.py --site ignition_demo --per-page
    ```
 
 Outputs are written next to each target:

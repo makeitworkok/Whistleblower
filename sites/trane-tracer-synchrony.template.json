@@ -1,0 +1,58 @@
+{
+  "_comment": "Template for Trane Tracer Synchrony login and baseline capture",
+  "_comment_when_to_use": "Use when the site is Trane Tracer Synchrony (hui/index.html and hui/hui.html)",
+  "_comment_usage": "1) Copy this file to sites/<your_site>.json, 2) Set base_url and watch URLs, 3) Set env vars for credentials, 4) Test",
+
+  "name": "your_site_name",
+  "base_url": "https://your-trane-host",
+
+  "ignore_https_errors": true,
+  "login_attempts": 2,
+
+  "viewport": {
+    "width": 1920,
+    "height": 1080
+  },
+
+  "login": {
+    "username": "${TRANE_USERNAME}",
+    "password": "${TRANE_PASSWORD}",
+    "user_selector": "#userid",
+    "pass_selector": "#password",
+    "submit_selector": "#logon",
+    "success_selector": "body"
+  },
+
+  "watch": [
+    {
+      "_comment_target1": "Login landing page after auth",
+      "name": "home",
+      "url": "https://your-trane-host/hui/index.html",
+      "root_selector": "body",
+      "settle_ms": 10000,
+      "screenshot_full_page": false
+    },
+    {
+      "_comment_target2": "Main app shell",
+      "name": "hui_shell",
+      "url": "https://your-trane-host/hui/hui.html",
+      "root_selector": "body",
+      "settle_ms": 12000,
+      "screenshot_full_page": false
+    },
+    {
+      "_comment_target3": "Example hash-routed view",
+      "name": "devices_summary",
+      "url": "https://your-trane-host/hui/hui.html#app=devices&view=SUMMARY",
+      "root_selector": "body",
+      "settle_ms": 15000,
+      "screenshot_full_page": false
+    }
+  ],
+
+  "_comment_timing": [
+    "Increase settle_ms if you see loading spinners or partial renders.",
+    "If login fails, re-check selectors in browser DevTools.",
+    "If the site uses self-signed certs, keep ignore_https_errors true."
+  ]
+}

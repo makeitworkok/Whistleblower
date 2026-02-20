@@ -217,8 +217,9 @@ Key fields you'll need:
    - optional `pre_click_selector`, `pre_click_wait_ms`, `pre_click_steps`
    - optional `prefer_url_on_pre_click_change` (default `true`)
 
-Note: ReactJS frontends are a work in progress. Navigation selectors can be volatile in
-SPAs, and we are still tuning the recorder/runner strategy for those UIs.
+**Working with ReactJS/SPAs:** Navigation selectors can be volatile in single-page applications. 
+See [docs/REACTJS-GUIDE.md](docs/REACTJS-GUIDE.md) for strategies on stable selectors, handling 
+loading states, and dealing with hash-based routing.
 
 BAS UIs vary wildly—some need delays, some have iframes, some throw modals. Tweak selectors and add waits in code as needed for your target.
 
@@ -395,7 +396,21 @@ And one run-level file:
 
 ---
 
-## 📜 License
+## � Additional Documentation
+
+### React/SPA Frontend Support- **[docs/REACT-DOCS-MAP.md](docs/REACT-DOCS-MAP.md)** - 🗺️ **START HERE** - Navigation guide for React documentation- **[docs/REACTJS-GUIDE.md](docs/REACTJS-GUIDE.md)** - Comprehensive guide for React, Vue, Angular, and SPA frontends
+- **[docs/REACT-QUICK-REF.md](docs/REACT-QUICK-REF.md)** - Quick reference with copy-paste config patterns
+- **[docs/REACT-TROUBLESHOOTING.md](docs/REACT-TROUBLESHOOTING.md)** - Step-by-step troubleshooting checklist
+- **[sites/ignition_perspective_annotated.example.json](sites/ignition_perspective_annotated.example.json)** - Annotated real-world example
+
+### Project Documentation
+- [docs/ROADMAP.md](docs/ROADMAP.md) - Development roadmap and milestones
+- [docs/CHANGELOG.md](docs/CHANGELOG.md) - Version history
+- [docs/CONSTRAINTS.md](docs/CONSTRAINTS.md) - Non-negotiable design constraints
+
+---
+
+## �📜 License
 
 Whistleblower is released under the **MIT License**.
 

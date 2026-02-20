@@ -1,0 +1,75 @@
+{
+  "_meta": {
+    "template_type": "niagara",
+    "vendor": "Tridium",
+    "system": "Niagara (N4)",
+    "description": "Supports Niagara 4 (N4) systems with 2-step authentication",
+    "login_pattern": "multi-step",
+    "login_steps": 2,
+    "step_1": "Username on /prelogin page",
+    "step_2": "Password on /login page (redirected)",
+    "tested_version": "Niagara 4.x",
+    "https_required": true,
+    "default_https_errors": true,
+    "typical_paths": [
+      "/prelogin - Username entry",
+      "/login - Password entry",
+      "/ord/file:* - Dashboard/UI files"
+    ]
+  },
+
+  "name": "your_niagara_site",
+  "base_url": "https://your-niagara-host",
+
+  "ignore_https_errors": true,
+  "login_attempts": 2,
+
+  "viewport": {
+    "width": 1920,
+    "height": 1080
+  },
+
+  "login": {
+    "username": "${NIAGARA_USERNAME}",
+    "password": "${NIAGARA_PASSWORD}",
+    "user_selector": "input.login-input",
+    "pass_selector": "#password",
+    "submit_selector": "#login-submit",
+    "success_selector": "main, [role='main'], .content, .main"
+  },
+
+  "watch": [
+    {
+      "_comment": "Username entry page",
+      "name": "login_username",
+      "url": "https://your-niagara-host/prelogin",
+      "root_selector": "body",
+      "settle_ms": 5000,
+      "screenshot_full_page": false
+    },
+    {
+      "_comment": "Password entry page",
+      "name": "login_password",
+      "url": "https://your-niagara-host/login",
+      "root_selector": "body",
+      "settle_ms": 5000,
+      "screenshot_full_page": false
+    },
+    {
+      "_comment": "Main dashboard - adjust the file path for your Niagara site",
+      "name": "dashboard",
+      "url": "https://your-niagara-host/ord/file:%5Epx/PxFile.px",
+      "root_selector": "body",
+      "settle_ms": 10000,
+      "screenshot_full_page": false
+    }
+  ],
+
+  "_instructions": {
+    "step_1_edit_values": "Replace 'your_niagara_host' with your actual Niagara host (e.g., niagara-server.local)",
+    "step_2_credentials": "Set environment variables: NIAGARA_USERNAME and NIAGARA_PASSWORD, or edit username/password directly",
+    "step_3_discover_paths": "Run bootstrap_recorder.py to find additional dashboard paths in your system",
+    "step_4_test": "Test with: python3 whistleblower.py --config sites/your_site.json",
+    "step_5_schedule": "Use ui_app.py for scheduled captures, or schedule with cron/Task Scheduler"
+  }
+}

@@ -289,6 +289,8 @@ def make_run_dir(data_dir: Path, site_name: str) -> Path:
 
 def login(page: Page, cfg: SiteConfig, timeout_ms: int) -> None:
     page.goto(cfg.base_url, wait_until="domcontentloaded", timeout=timeout_ms)
+    # Wait for any redirects to complete
+    page.wait_for_load_state("networkidle", timeout=min(timeout_ms, 10000))
 
     def login_succeeded() -> bool:
         if page.locator(cfg.login.success_selector).first.is_visible():
@@ -307,13 +309,32 @@ def login(page: Page, cfg: SiteConfig, timeout_ms: int) -> None:
             and password.is_enabled()
         )
 
+    def user_field_ready() -> bool:
+        user = page.locator(cfg.login.user_selector).first
+        try:
+            is_vis = user.is_visible(timeout=2000)  # Short timeout for visibility check
+        except TimeoutError:
+            is_vis = False
+        if is_vis:
+            print(f"DEBUG: user_selector '{cfg.login.user_selector}' is visible, will attempt fill")
+            return True
+        return False
+
+    def pass_field_ready() -> bool:
+        password = page.locator(cfg.login.pass_selector).first
+        try:
+            return password.is_visible(timeout=2000)
+        except TimeoutError:
+            return False
+
     last_error: TimeoutError | None = None
     for attempt in range(1, cfg.login_attempts + 1):
         ready_deadline = time.monotonic() + (timeout_ms / 1000)
         while time.monotonic() < ready_deadline:
             if login_succeeded():
                 return
-            if login_form_ready():
+            # Support multi-step or single-step login
+            if login_form_ready() or user_field_ready() or pass_field_ready():
                 break
             page.wait_for_timeout(500)
         else:
@@ -325,24 +346,49 @@ def login(page: Page, cfg: SiteConfig, timeout_ms: int) -> None:
             break
 
         form_timeout_ms = min(timeout_ms, 10000)
-        user = page.locator(cfg.login.user_selector).first
-        password = page.locator(cfg.login.pass_selector).first
-        user.fill(cfg.login.username, timeout=form_timeout_ms)
-        password.fill(cfg.login.password, timeout=form_timeout_ms)
-        try:
-            page.locator(cfg.login.submit_selector).click(timeout=form_timeout_ms)
-        except (TimeoutError, Error):
-            # Some BAS login forms submit on Enter and may not expose a stable submit control.
-            password.press("Enter", timeout=form_timeout_ms)
+        
+        # Fill username if available
+        if user_field_ready():
+            user = page.locator(cfg.login.user_selector).first
+            user.fill(cfg.login.username, timeout=form_timeout_ms)
+            
+            # If password not available yet, try submitting username first
+            if not pass_field_ready():
+                try:
+                    submit = page.locator(cfg.login.submit_selector).first
+                    if submit.is_visible():
+                        submit.click(timeout=form_timeout_ms)
+                except (TimeoutError, Error):
+                    user.press("Enter", timeout=form_timeout_ms)
+                
+                # Wait for password field to appear (multi-step login)
+                pass_deadline = time.monotonic() + (timeout_ms / 1000)
+                while time.monotonic() < pass_deadline:
+                    if login_succeeded():
+                        return
+                    if pass_field_ready():
+                        break
+                    page.wait_for_timeout(500)
+        
+        # Fill password if available
+        if pass_field_ready():
+            password = page.locator(cfg.login.pass_selector).first
+            try:
+                password.fill(cfg.login.password, timeout=form_timeout_ms)
+            except TimeoutError:
+                # Try force-filling if it's disabled
+                password.fill(cfg.login.password, timeout=form_timeout_ms, force=True)
+            try:
+                submit = page.locator(cfg.login.submit_selector).first
+                if submit.is_visible(timeout=2000):
+                    submit.click(timeout=form_timeout_ms)
+            except (TimeoutError, Error):
+                password.press("Enter", timeout=form_timeout_ms)
 
         attempt_deadline = time.monotonic() + (timeout_ms / 1000)
         while time.monotonic() < attempt_deadline:
             if login_succeeded():
                 return
-
-            if login_form_ready():
-                break
-
             page.wait_for_timeout(500)
 
         last_error = TimeoutError(

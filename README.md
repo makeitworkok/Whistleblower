@@ -64,6 +64,28 @@ Whistleblower is intended to be read-only. Configure the BAS account it uses wit
 
 ---
 
+## 🏢 Supported BAS Vendors & Systems
+
+Whistleblower includes **vendor-specific templates** to simplify setup. Each template includes:
+- Pre-configured login selectors for that vendor
+- Typical page paths and navigation patterns
+- Documentation and examples
+
+### Templates Registry
+
+| Vendor | System | Template | Status | Notes |
+|--------|--------|----------|--------|-------|
+| **Tridium** | Niagara (N4) | `niagara.template.json` | ✅ Tested | 2-step multi-page login, .px dashboards |
+| **Trane** | Tracer Synchrony | `trane-tracer-synchrony.template.json` | ✅ Tested | /hui/* pages, hash routing |
+| **Generic** | React/SPA (URL routing) | `react-url-based.template.json` | ✅ Tested | Hash-routed navigation |
+| **Generic** | React/SPA (click nav) | `react-click-based.template.json` | ✅ Tested | Menu-based navigation |
+| **Johnson Controls** | OpenBlue/Metasys | `johnson-controls.template.json` | 🔜 Planned | — |
+| **Custom/Unknown** | Any | `example.json` or bootstrap_recorder | ✅ Tested | Use bootstrap_recorder to auto-discover |
+
+**For detailed vendor info and setup instructions**, see [sites/README.md](sites/README.md) and [sites/templates-registry.json](sites/templates-registry.json).
+
+---
+
 ## 🗂️ Repository layout
 
 ```
@@ -74,7 +96,12 @@ Whistleblower/
 ├── analyze_capture.py        # Optional LLM analysis for captured runs
 ├── ui_app.py                 # Local web UI (bootstrap/capture/schedule/analysis)
 ├── sites/
-│   └── example.json          # Template—copy & edit for your site
+│   ├── README.md             # 📖 Template & config guide
+│   ├── templates-registry.json # 📋 All vendor profiles
+│   ├── niagara.template.json # Niagara/Tridium template
+│   ├── trane-tracer-synchrony.template.json
+│   ├── react-*.template.json # Generic SPA templates
+│   └── example.json          # Starting point for custom systems
 ├── data/                     # Runtime output (screenshots, DOM, etc.)
 │   └── .gitkeep
 ├── docs/
@@ -113,11 +140,36 @@ Whistleblower/
 
 4. Set up your private config (never commit this!)
 
+   **Option A: Use a vendor template** (if your system is in the registry)
+   
+   Check `sites/templates-registry.json` to find your BAS vendor:
    ```bash
+   # For Niagara systems:
+   cp sites/niagara.template.json sites/my-niagara-site.json
+   
+   # For Trane Tracer Synchrony:
+   cp sites/trane-tracer-synchrony.template.json sites/my-trane-site.json
+   
+   # For custom/unknown systems:
    cp sites/example.json sites/my-site.json
    ```
 
-   Edit `sites/my-site.json` with your real URL, username/password, login selectors, and pages/selectors. (See example.json comments for format.)
+   **Option B: Auto-discover selectors** (recommended for first-time setup)
+   
+   ```bash
+   python3 bootstrap_recorder.py --url https://your-system.local --site-name my-site
+   ```
+   
+   This launches an interactive browser where you log in manually. It discovers:
+   - Login form selectors
+   - Navigation paths
+   - UI element states
+   
+   Output: `sites/my-site.bootstrap.json` (ready to test)
+
+   Then edit `sites/my-site.json` with your real URL, username/password, login selectors, and pages/selectors. 
+   
+   📖 See `sites/README.md` for detailed template documentation and examples.
 
 5. Run it
 
@@ -139,8 +191,48 @@ Whistleblower/
    For normal scheduled/routine capture, leave `--record-video` off.
 
 ---
+## 🧪 Testing Your Configuration
 
-## 🖥️ Local UI (recommended for non-devs)
+Before deploying, validate your configuration and test on your system:
+
+```bash
+# Quick validation of all site configs (no network required)
+python3 test_configs.py
+
+# Functional test on reachable systems (attempts actual login/capture)
+python3 test_functional.py
+```
+
+Both scripts auto-discover all `sites/*.json` files and report results. Add new sites and re-run—tests update automatically.
+
+👉 **[See docs/TESTING.md](docs/TESTING.md) for detailed testing guide and troubleshooting.**
+
+---## � Multi-Step Login Support
+
+Some BAS systems (like Niagara) require **login across multiple pages**:
+
+```
+Step 1: /prelogin → Enter username → Submit
+         ↓
+Step 2: /login → Enter password → Submit
+         ↓
+Success → Dashboard
+```
+
+Whistleblower **automatically detects and handles** multi-step logins:
+- Detects when only username field is visible
+- Fills username, submits, waits for password page
+- Detects when password field appears
+- Fills password, submits, waits for authentication
+- Works with both single-step and multi-step flows
+
+**No special configuration needed** — the login function adapts based on what's visible.
+
+If you have a system with unusual login flow (OAuth, MFA, etc.), use `bootstrap_recorder.py` to understand the flow, then adjust selectors in your config.
+
+---
+
+## �🖥️ Local UI (recommended for non-devs)
 
 Run the local web UI to manage bootstrap recording, captures, schedules, and analysis.
 
@@ -404,6 +496,9 @@ And one run-level file:
 - **[sites/ignition_perspective_annotated.example.json](sites/ignition_perspective_annotated.example.json)** - Annotated real-world example
 
 ### Project Documentation
+- **[docs/TESTING.md](docs/TESTING.md)** - Testing guide: how to run test_configs.py and test_functional.py, add tests for new sites
+- **[docs/TEMPLATES.md](docs/TEMPLATES.md)** - Complete template system documentation and vendor support
+- [sites/README.md](sites/README.md) - Site configuration quick-start and credential management
 - [docs/ROADMAP.md](docs/ROADMAP.md) - Development roadmap and milestones
 - [docs/CHANGELOG.md](docs/CHANGELOG.md) - Version history
 - [docs/CONSTRAINTS.md](docs/CONSTRAINTS.md) - Non-negotiable design constraints

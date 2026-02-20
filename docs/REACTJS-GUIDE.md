@@ -7,6 +7,18 @@
 
 ReactJS and Single-Page Application (SPA) frontends present unique challenges for automation tools like Whistleblower. This guide covers strategies for reliably capturing screenshots and DOM state from React-based BAS/SCADA interfaces.
 
+## Quick Start Templates
+
+**Before diving into theory, grab a template:**
+
+1. **[react-url-based.template.json](../sites/react-url-based.template.json)** - For sites where URLs change during navigation (✅ EASIEST, try this first)
+2. **[react-click-based.template.json](../sites/react-click-based.template.json)** - For sites where URL stays same but views change (requires selector work)
+3. **[ignition_perspective_annotated.example.json](../sites/ignition_perspective_annotated.example.json)** - Detailed Ignition Perspective example
+
+**Workflow**: Run `bootstrap_recorder.py` → Check if generated config has multiple URLs → Pick template → Test → Adjust timing
+
+See [REACT-QUICK-REF.md](REACT-QUICK-REF.md) for copy-paste config patterns.
+
 ## Key Challenges
 
 ### 1. **Dynamic Selectors**

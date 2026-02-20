@@ -7,6 +7,8 @@ data/*
 sites/*.json
 !sites/example.json
 !sites/example_*.*
+!sites/*.example.json
+!sites/*.template.json
 # re-ignore private configs even if they match above patterns
 sites/local.json
 sites/*.local.json

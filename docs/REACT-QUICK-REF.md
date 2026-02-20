@@ -2,6 +2,25 @@
 
 > Quick copy-paste snippets for common React automation patterns
 
+## 🚀 Start Here: Ready-to-Use Templates
+
+**Copy these templates and fill in your site details:**
+
+- **[react-url-based.template.json](../sites/react-url-based.template.json)** ✅ EASIEST  
+  → Use when URLs change as you navigate (hash routing: `#/performance`, `#/equipment/ahu2`)  
+  → Works immediately, most reliable, recommended first choice
+
+- **[react-click-based.template.json](../sites/react-click-based.template.json)** ⚡ ADVANCED  
+  → Use when URL stays same but views change (single-page navigation)  
+  → Requires selector discovery, more fragile, use only if URL-based won't work
+
+- **[ignition_perspective_annotated.example.json](../sites/ignition_perspective_annotated.example.json)** 📚 DETAILED  
+  → Comprehensive example with comments for Ignition Perspective sites
+
+**Not sure which template?** Run bootstrap recorder and check the generated `.bootstrap.json`:
+- Multiple different URLs? → Use **react-url-based.template.json**
+- Only one URL despite clicking around? → Use **react-click-based.template.json**
+
 ## Selector Priority (Best to Worst)
 
 ```

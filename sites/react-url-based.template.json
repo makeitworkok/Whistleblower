@@ -1,0 +1,93 @@
+{
+  "_comment": "Template for React/SPA sites with URL-based navigation (hash routing)",
+  "_comment_when_to_use": "Use when bootstrap_recorder discovers multiple URLs with hash fragments (#/path)",
+  "_comment_advantages": "Most reliable - no fragile selectors, works immediately, no click timing issues",
+  "_comment_usage": "1. Run bootstrap_recorder.py with --record-video, 2. Wait 10+ seconds before clicking, 3. Copy generated .bootstrap.json URLs here",
+  
+  "name": "your_site_name",
+  "base_url": "https://your-react-app.example.com/",
+  
+  "ignore_https_errors": false,
+  "login_attempts": 2,
+  
+  "viewport": {
+    "width": 1920,
+    "height": 1080
+  },
+  
+  "login": {
+    "username": "your_username",
+    "password": "your_password",
+    "user_selector": "#username",
+    "pass_selector": "#password",
+    "submit_selector": "button[type='submit']",
+    "success_selector": "body"
+  },
+  
+  "watch": [
+    {
+      "_comment_target1": "Home view - base URL without hash",
+      "name": "home_dashboard",
+      "url": "https://your-react-app.example.com/",
+      "root_selector": "body",
+      "settle_ms": 10000,
+      "screenshot_full_page": false
+    },
+    {
+      "_comment_target2": "Performance view - URL with hash routing",
+      "name": "performance_view",
+      "url": "https://your-react-app.example.com/#/performance",
+      "root_selector": "body",
+      "settle_ms": 10000,
+      "screenshot_full_page": false
+    },
+    {
+      "_comment_target3": "Equipment detail - nested hash route",
+      "name": "equipment_detail",
+      "url": "https://your-react-app.example.com/#/equipment/ahu-2",
+      "root_selector": "body",
+      "settle_ms": 12000,
+      "screenshot_full_page": false
+    }
+  ],
+  
+  "_comment_workflow": [
+    "STEP 1: Run bootstrap recorder and discover URLs",
+    "  $ python3 bootstrap_recorder.py --url 'https://your-app.com/' --site-name 'test_site' --record-video",
+    "",
+    "STEP 2: Wait 10+ seconds after page loads before clicking anything (let React event listeners initialize)",
+    "",
+    "STEP 3: Click through all views you want to capture",
+    "",
+    "STEP 4: Review generated sites/test_site.bootstrap.json - if it has multiple URLs with hash fragments, use this template",
+    "",
+    "STEP 5: Copy URLs from generated config to this template, adjust settle_ms if needed",
+    "",
+    "STEP 6: Test baseline capture",
+    "  $ python3 whistleblower.py --config sites/your_site.json",
+    "",
+    "STEP 7: Review screenshots - increase settle_ms if you see loading spinners or blank content"
+  ],
+  
+  "_comment_timing_guide": [
+    "settle_ms: Time to wait after navigation before screenshot",
+    "  - 10000ms (10s): Standard for most React apps",
+    "  - 12000ms (12s): Use for data-heavy dashboards",
+    "  - 15000ms (15s): Use for slow APIs or complex charts",
+    "  - 20000ms (20s): Use only if you see loading states in screenshots"
+  ],
+  
+  "_comment_troubleshooting": [
+    "If screenshots are blank or show loading:",
+    "  → Increase settle_ms by 5000ms increments",
+    "  → Check browser console in bootstrap_recorder video for errors",
+    "",
+    "If login fails:",
+    "  → Verify selectors in browser DevTools",
+    "  → Try success_selector: '.user-menu' or 'text=Dashboard' instead of 'body'",
+    "",
+    "If you see 'element not found' errors:",
+    "  → Wrong template! You need react-click-based.template.json instead",
+    "  → This template is for URL-based navigation only"
+  ]
+}

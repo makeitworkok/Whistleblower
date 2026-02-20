@@ -1,0 +1,174 @@
+{
+  "_comment": "Template for React/SPA sites with click-based navigation (no URL changes)",
+  "_comment_when_to_use": "Use when bootstrap_recorder generates ONLY ONE URL but you clicked multiple views",
+  "_comment_challenges": "Requires selector discovery - more fragile than URL-based, needs careful timing",
+  "_comment_usage": "1. Get baseline working first (no pre_click_steps), 2. Add one click at a time, 3. Test after each addition",
+  
+  "name": "your_site_name",
+  "base_url": "https://your-react-app.example.com/",
+  
+  "ignore_https_errors": false,
+  "login_attempts": 2,
+  
+  "viewport": {
+    "width": 1920,
+    "height": 1080
+  },
+  
+  "login": {
+    "username": "your_username",
+    "password": "your_password",
+    "user_selector": "#username",
+    "pass_selector": "#password",
+    "submit_selector": "button[type='submit']",
+    "success_selector": "body"
+  },
+  
+  "watch": [
+    {
+      "_comment_baseline": "FIRST: Test baseline - just load the page, no clicks",
+      "name": "baseline_dashboard",
+      "url": "https://your-react-app.example.com/",
+      "root_selector": "body",
+      "settle_ms": 10000,
+      "screenshot_full_page": false
+    },
+    {
+      "_comment_single_click": "SECOND: Add ONE click to navigate to equipment view",
+      "name": "equipment_after_click",
+      "url": "https://your-react-app.example.com/",
+      "root_selector": "body",
+      "settle_ms": 12000,
+      "screenshot_full_page": false,
+      
+      "pre_click_steps": [
+        {
+          "_comment_selector_priority": "1. data-testid/data-component (best), 2. ARIA labels, 3. text= (fragile), 4. XPath (last resort)",
+          "selector": "[data-testid='equipment-nav-button']",
+          
+          "_comment_candidates": "Provide fallback selectors in priority order",
+          "selector_candidates": [
+            "[data-testid='equipment-nav-button']",
+            "button[aria-label='Equipment']",
+            "text=Equipment",
+            "xpath=//button[contains(text(), 'Equipment')]"
+          ],
+          
+          "action": "click",
+          "nth": 0,
+          
+          "_comment_wait": "Time to wait after click for view transition - start with 5000ms",
+          "wait_ms": 5000
+        }
+      ]
+    },
+    {
+      "_comment_multi_click": "THIRD: Add multiple clicks for deep navigation",
+      "name": "ahu_detail_view",
+      "url": "https://your-react-app.example.com/",
+      "root_selector": "body",
+      "settle_ms": 15000,
+      "screenshot_full_page": false,
+      
+      "pre_click_steps": [
+        {
+          "_comment_step1": "Click navigation icon to open equipment tree",
+          "selector": "xpath=/html/body/div/div/div[3]/div[1]/div[2]/div/div[1]/div/div[1]/div/div[2]/div[3]",
+          "action": "click",
+          "nth": 0,
+          "wait_ms": 5000
+        },
+        {
+          "_comment_step2": "Click AHU 2 equipment card",
+          "selector": "text=AHU 2",
+          "selector_candidates": [
+            "[data-component-path*='ahu-2']",
+            "text=AHU 2"
+          ],
+          "action": "click",
+          "nth": 0,
+          "wait_ms": 3000
+        }
+      ]
+    }
+  ],
+  
+  "_comment_workflow": [
+    "ITERATIVE APPROACH - Add complexity gradually:",
+    "",
+    "STEP 1: Run bootstrap recorder with video",
+    "  $ python3 bootstrap_recorder.py --url 'https://your-app.com/' --site-name 'test_site' --record-video",
+    "",
+    "STEP 2: Wait 10+ seconds, then click through views slowly",
+    "",
+    "STEP 3: Check if generated .bootstrap.json has multiple URLs",
+    "  → Yes? Use react-url-based.template.json instead (easier!)",
+    "  → No? Continue with this template",
+    "",
+    "STEP 4: Test baseline (no clicks) to verify basic capture works",
+    "  $ python3 whistleblower.py --config sites/baseline.json",
+    "",
+    "STEP 5: Add FIRST click only, test again",
+    "  → If it works, add next click",
+    "  → If it fails, debug selector (see troubleshooting below)",
+    "",
+    "STEP 6: Repeat step 5 until all navigation captured",
+    "",
+    "CRITICAL: Never add multiple clicks at once - you won't know which one failed!"
+  ],
+  
+  "_comment_selector_discovery": [
+    "How to find selectors when bootstrap_recorder misses clicks:",
+    "",
+    "METHOD 1: Use Playwright codegen (best for XPath)",
+    "  $ npx playwright codegen 'https://your-app.com/' --viewport-size 1920,1080",
+    "  → Click the element you need",
+    "  → Copy the selector from codegen window",
+    "  → Prefer XPath over CSS when element has no stable attributes",
+    "",
+    "METHOD 2: Browser DevTools",
+    "  → Right-click element → Inspect",
+    "  → Look for data-testid, data-component, aria-label attributes",
+    "  → Copy full XPath: Right-click in Elements → Copy → Copy XPath",
+    "",
+    "METHOD 3: Review bootstrap recorder video",
+    "  → Watch data/bootstrap/test_site/*/recording.webm",
+    "  → Pause on the click you need",
+    "  → Note any text or visual markers near the element"
+  ],
+  
+  "_comment_timing_guide": [
+    "settle_ms: Wait after page load before starting clicks",
+    "  - 10000ms: Standard baseline",
+    "  - 15000ms: Data-heavy initial load",
+    "  - 20000ms: If you see 'element not found' on first click",
+    "",
+    "wait_ms (per click): Wait after click before next action",
+    "  - 2000ms: Fast transitions (drawer opens, tab switches)",
+    "  - 3000ms: Standard view changes",
+    "  - 5000ms: New component mounts with data fetch",
+    "  - 8000ms: Complex charts or tables rendering"
+  ],
+  
+  "_comment_troubleshooting": [
+    "Element not found after click:",
+    "  → Watch bootstrap video - did the click work?",
+    "  → Increase wait_ms on previous click by 2000ms",
+    "  → Check if element needs scroll: add scroll action before click",
+    "  → Try Playwright codegen to get accurate selector",
+    "",
+    "Selector works once but fails later:",
+    "  → Selector is too specific (data-component-path with version numbers)",
+    "  → Add selector_candidates with more general fallbacks",
+    "  → Consider text= selector as last-resort fallback",
+    "",
+    "XPath selector breaks on different viewport:",
+    "  → XPath using absolute positions (/html/body/div[1]/div[2]) is fragile",
+    "  → Try relative XPath: //button[contains(@class, 'nav-icon')]",
+    "  → Better: identify any data-* attributes on parent and use CSS",
+    "",
+    "Screenshots show loading spinner:",
+    "  → Increase final settle_ms by 5000ms increments",
+    "  → Check if API is slow - may need 20000ms settle_ms"
+  ]
+}

@@ -2,7 +2,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/Python-3.11%2B-blue.svg)](https://www.python.org/)
-[![Status](https://img.shields.io/badge/Status-Alpha-orange.svg)](#current-status)
+[![Status](https://img.shields.io/badge/Status-Alpha-orange.svg)](#-current-status)
 
 > Read-only evidence capture for dashboards.
 
@@ -67,6 +67,7 @@ Whistleblower is intended to be read-only. Configure the BAS account it uses wit
 ## 🏢 Supported BAS Vendors & Systems
 
 Whistleblower includes **vendor-specific templates** to simplify setup. Each template includes:
+
 - Pre-configured login selectors for that vendor
 - Typical page paths and navigation patterns
 - Documentation and examples
@@ -74,7 +75,7 @@ Whistleblower includes **vendor-specific templates** to simplify setup. Each tem
 ### Templates Registry
 
 | Vendor | System | Template | Status | Notes |
-|--------|--------|----------|--------|-------|
+| ------ | ------ | -------- | ------ | ----- |
 | **Tridium** | Niagara (N4) | `niagara.template.json` | ✅ Tested | 2-step multi-page login, .px dashboards |
 | **Trane** | Tracer Synchrony | `trane-tracer-synchrony.template.json` | ✅ Tested | /hui/* pages, hash routing |
 | **Generic** | React/SPA (URL routing) | `react-url-based.template.json` | ✅ Tested | Hash-routed navigation |
@@ -88,7 +89,7 @@ Whistleblower includes **vendor-specific templates** to simplify setup. Each tem
 
 ## 🗂️ Repository layout
 
-```
+```text
 Whistleblower/
 ├── requirements.txt
 ├── whistleblower.py          # Main capture runner (Playwright automation)
@@ -141,8 +142,9 @@ Whistleblower/
 4. Set up your private config (never commit this!)
 
    **Option A: Use a vendor template** (if your system is in the registry)
-   
+
    Check `sites/templates-registry.json` to find your BAS vendor:
+
    ```bash
    # For Niagara systems:
    cp sites/niagara.template.json sites/my-niagara-site.json
@@ -155,20 +157,20 @@ Whistleblower/
    ```
 
    **Option B: Auto-discover selectors** (recommended for first-time setup)
-   
+
    ```bash
    python3 bootstrap_recorder.py --url https://your-system.local --site-name my-site
    ```
-   
+
    This launches an interactive browser where you log in manually. It discovers:
    - Login form selectors
    - Navigation paths
    - UI element states
-   
+
    Output: `sites/my-site.bootstrap.json` (ready to test)
 
-   Then edit `sites/my-site.json` with your real URL, username/password, login selectors, and pages/selectors. 
-   
+   Then edit `sites/my-site.json` with your real URL, username/password, login selectors, and pages/selectors.
+
    📖 See `sites/README.md` for detailed template documentation and examples.
 
 5. Run it
@@ -191,6 +193,7 @@ Whistleblower/
    For normal scheduled/routine capture, leave `--record-video` off.
 
 ---
+
 ## 🧪 Testing Your Configuration
 
 Before deploying, validate your configuration and test on your system:
@@ -207,11 +210,13 @@ Both scripts auto-discover all `sites/*.json` files and report results. Add new 
 
 👉 **[See docs/TESTING.md](docs/TESTING.md) for detailed testing guide and troubleshooting.**
 
----## � Multi-Step Login Support
+---
+
+## 🔐 Multi-Step Login Support
 
 Some BAS systems (like Niagara) require **login across multiple pages**:
 
-```
+```text
 Step 1: /prelogin → Enter username → Submit
          ↓
 Step 2: /login → Enter password → Submit
@@ -220,6 +225,7 @@ Success → Dashboard
 ```
 
 Whistleblower **automatically detects and handles** multi-step logins:
+
 - Detects when only username field is visible
 - Fills username, submits, waits for password page
 - Detects when password field appears
@@ -232,7 +238,7 @@ If you have a system with unusual login flow (OAuth, MFA, etc.), use `bootstrap_
 
 ---
 
-## �🖥️ Local UI (recommended for non-devs)
+## 🖥️ Local UI (recommended for non-devs)
 
 Run the local web UI to manage bootstrap recording, captures, schedules, and analysis.
 
@@ -253,6 +259,7 @@ Then open:
 `http://127.0.0.1:8787`
 
 What the UI provides:
+
 - Bootstrap recorder (build a starter config and suggested steps)
 - Main capture (run once)
 - Scheduled capture (run every N minutes)
@@ -262,6 +269,7 @@ What the UI provides:
 ### Analysis API key
 
 Analysis requires an API key. You can:
+
 - Set `OPENAI_API_KEY` or `XAI_API_KEY` in your environment
 - Or place it in `.private/openai.env`
 - Or paste it into the UI before running analysis
@@ -272,7 +280,7 @@ Analysis requires an API key. You can:
 
 After a successful run:
 
-```
+```text
 data/
 └── my-site/                  # From "site_name" in your config
     └── 20260210-161200/      # Timestamp of run
@@ -306,11 +314,11 @@ Key fields you'll need:
   - `name`, `url`, `root_selector`
   - `settle_ms`
   - `screenshot_full_page` or `screenshot_selector`
-   - optional `pre_click_selector`, `pre_click_wait_ms`, `pre_click_steps`
-   - optional `prefer_url_on_pre_click_change` (default `true`)
+  - optional `pre_click_selector`, `pre_click_wait_ms`, `pre_click_steps`
+  - optional `prefer_url_on_pre_click_change` (default `true`)
 
-**Working with ReactJS/SPAs:** Navigation selectors can be volatile in single-page applications. 
-See [docs/REACTJS-GUIDE.md](docs/REACTJS-GUIDE.md) for strategies on stable selectors, handling 
+**Working with ReactJS/SPAs:** Navigation selectors can be volatile in single-page applications.
+See [docs/REACTJS-GUIDE.md](docs/REACTJS-GUIDE.md) for strategies on stable selectors, handling
 loading states, and dealing with hash-based routing.
 
 BAS UIs vary wildly—some need delays, some have iframes, some throw modals. Tweak selectors and add waits in code as needed for your target.
@@ -480,22 +488,28 @@ Provider options:
    ```
 
 Outputs are written next to each target:
+
 - `analysis.md` (human-readable findings)
 - `analysis.json` (structured metadata)
 
 And one run-level file:
+
 - `analysis_summary.json`
 
 ---
 
-## � Additional Documentation
+## 📚 Additional Documentation
 
-### React/SPA Frontend Support- **[docs/REACT-DOCS-MAP.md](docs/REACT-DOCS-MAP.md)** - 🗺️ **START HERE** - Navigation guide for React documentation- **[docs/REACTJS-GUIDE.md](docs/REACTJS-GUIDE.md)** - Comprehensive guide for React, Vue, Angular, and SPA frontends
+### React/SPA Frontend Support
+
+- **[docs/REACT-DOCS-MAP.md](docs/REACT-DOCS-MAP.md)** - 🗺️ **START HERE** - Navigation guide for React documentation
+- **[docs/REACTJS-GUIDE.md](docs/REACTJS-GUIDE.md)** - Comprehensive guide for React, Vue, Angular, and SPA frontends
 - **[docs/REACT-QUICK-REF.md](docs/REACT-QUICK-REF.md)** - Quick reference with copy-paste config patterns
 - **[docs/REACT-TROUBLESHOOTING.md](docs/REACT-TROUBLESHOOTING.md)** - Step-by-step troubleshooting checklist
 - **[sites/ignition_perspective_annotated.example.json](sites/ignition_perspective_annotated.example.json)** - Annotated real-world example
 
 ### Project Documentation
+
 - **[docs/TESTING.md](docs/TESTING.md)** - Testing guide: how to run test_configs.py and test_functional.py, add tests for new sites
 - **[docs/TEMPLATES.md](docs/TEMPLATES.md)** - Complete template system documentation and vendor support
 - [sites/README.md](sites/README.md) - Site configuration quick-start and credential management
@@ -505,13 +519,14 @@ And one run-level file:
 
 ---
 
-## �📜 License
+## 📜 License
 
 Whistleblower is released under the **MIT License**.
 
 You are free to use, modify, and distribute this software for any purpose, including commercial use, without restriction. See [LICENSE](./LICENSE) for the full license text.
 
 Contributions welcome.
+
 ---
 
 ## 🤝 Code of Conduct

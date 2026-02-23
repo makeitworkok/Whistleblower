@@ -1,0 +1,128 @@
+{
+  "_comment": "This is an annotated example for working with Ignition Perspective (React-based BAS UI)",
+  "_comment_usage": "Remove all _comment fields before using this config",
+  
+  "name": "ignition_perspective_annotated",
+  "base_url": "https://demo.inductiveautomation.com/data/perspective/client/building-management-system-demo/",
+  
+  "_comment_ignore_https": "Perspective demos often use self-signed certs in test environments",
+  "ignore_https_errors": true,
+  
+  "_comment_login_attempts": "Retry login twice in case of transient loading issues",
+  "login_attempts": 2,
+  
+  "viewport": {
+    "width": 1920,
+    "height": 1080
+  },
+  
+  "login": {
+    "_comment_credentials": "This demo has no auth, but credentials would go here",
+    "username": "",
+    "password": "",
+    
+    "_comment_selectors": "Use simple ID selectors when available",
+    "user_selector": "#username",
+    "pass_selector": "#password",
+    "submit_selector": "button[type='submit']",
+    
+    "_comment_success": "Perspective doesn't always have a logout button, body is fallback",
+    "success_selector": "body"
+  },
+  
+  "watch": [
+    {
+      "_comment_target": "Capture AHU-2 detail view after clicking equipment card",
+      "name": "ahu_2_detail",
+      
+      "_comment_url": "Base URL stays the same, navigation happens via clicks",
+      "url": "https://demo.inductiveautomation.com/data/perspective/client/building-management-system-demo/",
+      
+      "_comment_root": "Broad selector since Perspective UI is fully dynamic",
+      "root_selector": "body",
+      
+      "_comment_settle": "10 seconds for React hydration + data fetch",
+      "settle_ms": 10000,
+      
+      "_comment_screenshot": "Capture visible viewport, not full scrollable page",
+      "screenshot_full_page": false,
+      
+      "_comment_steps": "Click AHU-2 label to navigate to detail view",
+      "pre_click_steps": [
+        {
+          "_comment_perspective_selector": "data-component-path is stable in Perspective",
+          "selector": "div[data-component=\"ia.display.label\"][data-component-path=\"C$0:0:0$0:1.0:0:0:0:1:1\"]",
+          
+          "_comment_candidates": "Fallback to text selector if component path changes",
+          "selector_candidates": [
+            "div[data-component=\"ia.display.label\"][data-component-path=\"C$0:0:0$0:1.0:0:0:0:1:1\"]",
+            "text=AHU 2"
+          ],
+          
+          "action": "click",
+          "nth": 0,
+          
+          "_comment_wait": "2 seconds for view transition and component mount",
+          "wait_ms": 2000
+        }
+      ]
+    },
+    
+    {
+      "_comment_example2": "Another target showing multi-step navigation",
+      "name": "chiller_1_alarms",
+      "url": "https://demo.inductiveautomation.com/data/perspective/client/building-management-system-demo/",
+      "root_selector": "body",
+      "settle_ms": 12000,
+      "screenshot_full_page": false,
+      
+      "pre_click_steps": [
+        {
+          "_comment_step1": "First click: open equipment tree",
+          "selector": "[data-component='ia.container.flex']",
+          "selector_candidates": [
+            "[data-component='ia.container.flex'][data-component-path='C$0:0:0$0:0']",
+            "text=Equipment"
+          ],
+          "action": "click",
+          "nth": 0,
+          "wait_ms": 1500
+        },
+        {
+          "_comment_step2": "Second click: expand HVAC group",
+          "selector": "div:has-text('HVAC')",
+          "action": "click",
+          "nth": 0,
+          "wait_ms": 1500
+        },
+        {
+          "_comment_step3": "Third click: select Chiller-1",
+          "selector": "text=Chiller 1",
+          "action": "click",
+          "nth": 0,
+          "wait_ms": 2000
+        },
+        {
+          "_comment_step4": "Fourth click: open alarms tab",
+          "selector": "[data-tab='alarms']",
+          "selector_candidates": [
+            "[data-tab='alarms']",
+            "text=Alarms"
+          ],
+          "action": "click",
+          "nth": 0,
+          "wait_ms": 3000
+        }
+      ]
+    }
+  ],
+  
+  "_comment_tips": [
+    "1. Always test selectors in browser DevTools first",
+    "2. Increase settle_ms if screenshots capture loading states",
+    "3. Use data-component and data-component-path when available",
+    "4. Text selectors are fragile but work as last resort",
+    "5. Record sessions with bootstrap_recorder.py to discover selectors",
+    "6. Add wait_ms after each click (1500-3000ms typical for Perspective)"
+  ]
+}

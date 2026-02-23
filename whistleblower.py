@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# Copyright (c) 2025-2026 Chris Favre - MIT License
+# See LICENSE file for full terms
 """Whistleblower: read-only BAS web UI capture tool."""
 
 from __future__ import annotations

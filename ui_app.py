@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# Copyright (c) 2025-2026 Chris Favre - MIT License
+# See LICENSE file for full terms
 """Local web UI for Whistleblower runs (bootstrap + capture)."""
 
 from __future__ import annotations

@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# Copyright (c) 2025-2026 Chris Favre - MIT License
+# See LICENSE file for full terms
 """Interactive, read-only bootstrap recorder for Whistleblower configs."""
 
 from __future__ import annotations

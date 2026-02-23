@@ -58,6 +58,16 @@ Whistleblower is intended to be read-only. Configure the BAS account it uses wit
 
 ## 🧰 Requirements
 
+### Windows Executable (Easiest)
+
+**Don't want to install Python?** Download the Windows executable:
+- No Python installation required
+- Download, extract, and run
+- Includes all dependencies bundled
+- See the `windows-exe` branch for builds
+
+### From Source
+
 - Python 3.11+ (`whistleblower.py`, `ui_app.py`, `bootstrap_recorder.py`, `analyze_capture.py`)
 - Valid credentials for the BAS web interface you want to watch
 - Internet for the initial dependency/browser install and only when using API-backed analysis providers
@@ -117,6 +127,19 @@ Whistleblower/
 ---
 
 ## ⚡ Quick Start
+
+### Option 1: Windows Executable (No Python Required)
+
+1. Download the Whistleblower Windows package from the releases page
+2. Extract the ZIP file to your desired location
+3. Run `install-browsers.bat` (first time only - downloads Chromium)
+4. Run `start-whistleblower.bat` or double-click `Whistleblower.exe`
+5. Your browser will open to http://127.0.0.1:8787
+6. Use the web UI to configure and run captures
+
+See `dist/Whistleblower/README.txt` in the Windows build for full details.
+
+### Option 2: From Source (Python Required)
 
 1. Clone it
 

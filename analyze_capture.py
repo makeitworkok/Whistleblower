@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# Copyright (c) 2025-2026 Chris Favre - MIT License
+# See LICENSE file for full terms
 """Analyze Whistleblower capture artifacts using an LLM with image + DOM context."""
 
 from __future__ import annotations

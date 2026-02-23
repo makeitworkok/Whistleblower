@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# Copyright (c) 2025-2026 Chris Favre - MIT License
+# See LICENSE file for full terms
 """Test suite for Whistleblower site configs."""
 
 import json

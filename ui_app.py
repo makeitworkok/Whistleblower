@@ -9,6 +9,7 @@ import os
 import threading
 import time
 import urllib.parse
+import webbrowser
 from datetime import datetime, timedelta, timezone
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, HTTPServer
@@ -20,6 +21,7 @@ from typing import Any
 HOST = "127.0.0.1"
 PORT = 8787
 
+SERVER: HTTPServer | None = None
 STATE_LOCK = threading.Lock()
 BOOTSTRAP_PROCESS: subprocess.Popen[str] | None = None
 BOOTSTRAP_LOG: list[str] = []
@@ -545,7 +547,10 @@ def render_page(message: str | None = None) -> str:
   <div class='wrap'>
     <header>
       <h1>Whistleblower Control Room</h1>
-      <div class='badge'>Local UI</div>
+      <div style='display: flex; gap: 12px; align-items: center;'>
+        <div class='badge'>Local UI</div>
+        <button id='stop_server_btn' class='danger' style='margin: 0; padding: 6px 12px; font-size: 12px;'>Stop Server</button>
+      </div>
     </header>
     {message_html}
 
@@ -919,6 +924,22 @@ def render_page(message: str | None = None) -> str:
     }}
   }};
   setInterval(refreshCaptureStatus, 2000);
+  
+  const stopButton = document.getElementById('stop_server_btn');
+  if (stopButton) {{
+    stopButton.addEventListener('click', async () => {{
+      if (confirm('Stop Whistleblower server?')) {{
+        try {{
+          await fetch('/stop');
+          setTimeout(() => {{
+            window.location.href = 'about:blank';
+          }}, 1000);
+        }} catch (err) {{
+          console.error('Failed to stop server', err);
+        }}
+      }}
+    }});
+  }}
   </script>
 </body>
 </html>"""
@@ -1014,6 +1035,19 @@ class UIHandler(BaseHTTPRequestHandler):
             self.send_header("Content-Type", "text/html; charset=utf-8")
             self.end_headers()
             self.wfile.write(page.encode("utf-8"))
+            return
+
+        if self.path == "/stop":
+            self.send_response(HTTPStatus.OK)
+            self.send_header("Content-Type", "text/html; charset=utf-8")
+            self.end_headers()
+            self.wfile.write(b"<html><body><h1>Whistleblower stopped.</h1></body></html>")
+            # Gracefully shutdown the server in a separate thread
+            def shutdown_server():
+                time.sleep(0.5)
+                if SERVER:
+                    SERVER.shutdown()
+            threading.Thread(target=shutdown_server, daemon=True).start()
             return
 
         self.send_error(HTTPStatus.NOT_FOUND)
@@ -1287,13 +1321,30 @@ class UIHandler(BaseHTTPRequestHandler):
 
 
 def main() -> int:
+    global SERVER
     server = HTTPServer((HOST, PORT), UIHandler)
-    print(f"Whistleblower UI running at http://{HOST}:{PORT}")
+    SERVER = server
+    url = f"http://{HOST}:{PORT}"
+    print(f"Whistleblower UI running at {url}")
     print("Press Ctrl+C to stop.")
+    
+    # Auto-launch browser in a separate thread to avoid blocking server startup
+    def launch_browser():
+        time.sleep(0.5)  # Give server a moment to be ready
+        try:
+            webbrowser.open(url)
+        except Exception as e:
+            print(f"Could not auto-launch browser: {e}")
+    
+    browser_thread = threading.Thread(target=launch_browser, daemon=True)
+    browser_thread.start()
+    
     try:
         server.serve_forever()
     except KeyboardInterrupt:
         pass
+    finally:
+        SERVER = None
     return 0
 
 

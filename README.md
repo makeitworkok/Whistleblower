@@ -119,94 +119,91 @@ Whistleblower/
 
 ## ⚡ Quick Start
 
-1. Clone it
+### UI-Based Setup (Recommended)
+
+1. **Clone and install**
 
    ```bash
    git clone https://github.com/makeitworkok/Whistleblower.git
    cd Whistleblower
-   ```
-
-2. Make an output dir (if not already there)
-
-   ```bash
-   mkdir -p data
-   ```
-
-3. Install dependencies (first time only)
-
-   ```bash
    python3 -m pip install -r requirements.txt
    python3 -m playwright install chromium
    ```
 
-4. Set up your private config (never commit this!)
-
-   **Option A: Use a vendor template** (if your system is in the registry)
-
-   Check `sites/templates-registry.json` to find your BAS vendor:
+2. **Start the local web UI**
 
    ```bash
-   # For Niagara systems:
-   cp sites/niagara.template.json sites/my-niagara-site.json
-   
-   # For Trane Tracer Synchrony:
-   cp sites/trane-tracer-synchrony.template.json sites/my-trane-site.json
-   
-   # For custom/unknown systems:
-   cp sites/example.json sites/my-site.json
+   python3 ui_app.py
    ```
 
-   **Option B: Auto-discover selectors** (recommended for first-time setup)
+   Open in browser: `http://127.0.0.1:8787`
 
-   ```bash
-   python3 bootstrap_recorder.py --url https://your-system.local --site-name my-site
-   ```
+3. **Bootstrap your first site**
 
-   This launches an interactive browser where you log in manually. It discovers:
-   - Login form selectors
-   - Navigation paths
-   - UI element states
+   - Navigate to the **Bootstrap** tab
+   - Enter your BAS system URL and a site name
+   - Click "Start Bootstrap Recording"
+   - Log in and navigate through your system
+   - Click "Stop Recording" when done
 
-   Output: `sites/my-site.bootstrap.json` (ready to test)
+   The recorder will generate a starter config with discovered selectors automatically.
 
-   Then edit `sites/my-site.json` with your real URL, username/password, login selectors, and pages/selectors.
+4. **Run your first capture**
 
-   📖 See `sites/README.md` for detailed template documentation and examples.
+   - Navigate to the **Capture** tab
+   - Select your site config
+   - Click "Run Capture"
+   - View screenshots and data in the output directory
 
-5. Run it
+5. **Optional: Set up scheduled captures**
 
-   **Linux/macOS/Windows (PowerShell/CMD):**
+   - Navigate to the **Schedule** tab
+   - Configure capture interval (e.g., every 15 minutes)
+   - Enable scheduling
 
-   ```bash
-   python3 whistleblower.py --config sites/my-site.json
-   ```
+6. **Optional: Run analysis**
 
-6. Optional (debug only): record the full interaction as video
+   - Navigate to the **Analysis** tab
+   - Add your API key (OpenAI or xAI/Grok)
+   - Select a run and click "Analyze"
 
-   ```bash
-   python3 whistleblower.py --config sites/my-site.json --record-video
-   ```
+### CLI-Based Setup (Advanced)
 
-   Video output is saved per run at:
-   `data/<site_name>/<timestamp>/video/session.mp4`
+For automation, scripting, and headless deployments, use the command-line tools:
 
-   For normal scheduled/routine capture, leave `--record-video` off.
+```bash
+# Bootstrap a config
+python3 bootstrap_recorder.py --url https://your-system.local --site-name my-site
+
+# Run a capture
+python3 whistleblower.py --config sites/my-site.json
+
+# Analyze results
+python3 analyze_capture.py --site my-site
+```
+
+📖 **[See docs/CLI-GUIDE.md](docs/CLI-GUIDE.md) for complete CLI reference and advanced usage.**
 
 ---
 
 ## 🧪 Testing Your Configuration
 
-Before deploying, validate your configuration and test on your system:
+Before deploying, validate your configuration:
+
+**Using the UI:**
+
+- Navigate to the **Test** tab
+- Select config and click "Validate"
+
+**Using CLI:**
 
 ```bash
-# Quick validation of all site configs (no network required)
+# Quick validation (no network required)
 python3 test_configs.py
 
-# Functional test on reachable systems (attempts actual login/capture)
+# Functional test (attempts actual login/capture)
 python3 test_functional.py
 ```
-
-Both scripts auto-discover all `sites/*.json` files and report results. Add new sites and re-run—tests update automatically.
 
 👉 **[See docs/TESTING.md](docs/TESTING.md) for detailed testing guide and troubleshooting.**
 
@@ -238,41 +235,38 @@ If you have a system with unusual login flow (OAuth, MFA, etc.), use `bootstrap_
 
 ---
 
-## 🖥️ Local UI (recommended for non-devs)
+## 🖥️ Local Web UI
 
-Run the local web UI to manage bootstrap recording, captures, schedules, and analysis.
-
-Install local dependencies first:
-
-```bash
-python3 -m pip install -r requirements.txt
-python3 -m playwright install chromium
-```
-
-Then start the UI:
+The web UI provides a complete interface for all Whistleblower operations:
 
 ```bash
 python3 ui_app.py
+# Open http://127.0.0.1:8787
 ```
 
-Then open:
-`http://127.0.0.1:8787`
+### Features
 
-What the UI provides:
+- **Bootstrap Tab**: Record operator flows to auto-generate configs
+- **Capture Tab**: Run one-off captures with live progress
+- **Schedule Tab**: Configure recurring captures (e.g., every 15 minutes)
+- **Analysis Tab**: Run LLM analysis on captured data
+  - Single run or time-range analysis
+  - OpenAI or xAI/Grok providers
+  - Combined or per-page output
+- **Test Tab**: Validate configs before deployment
 
-- Bootstrap recorder (build a starter config and suggested steps)
-- Main capture (run once)
-- Scheduled capture (run every N minutes)
-- Analysis (single combined analysis per run, or per-page)
-- Time-range analysis (analyze runs between start/end UTC filters)
+### API Keys for Analysis
 
-### Analysis API key
+You can provide API keys in three ways:
 
-Analysis requires an API key. You can:
+1. **In the UI**: Paste directly into the Analysis tab
+2. **Environment variable**: `OPENAI_API_KEY` or `XAI_API_KEY`
+3. **Private file**: `.private/openai.env` (recommended)
 
-- Set `OPENAI_API_KEY` or `XAI_API_KEY` in your environment
-- Or place it in `.private/openai.env`
-- Or paste it into the UI before running analysis
+   ```bash
+   cp .private/openai.env.example .private/openai.env
+   # Edit and set your key
+   ```
 
 ---
 
@@ -299,9 +293,9 @@ Each run gets its own timestamped folder. Nothing gets overwritten.
 
 ## ⚙️ Configuration (sites/*.json)
 
-Configs are per-site JSON files. Minimal example in `sites/example.json`.
+Configs are per-site JSON files stored in `sites/`. See `sites/example.json` for a minimal template.
 
-Key fields you'll need:
+### Key Configuration Fields
 
 - `name`: Friendly name for output folders
 - `base_url`: Login/entry URL
@@ -317,70 +311,32 @@ Key fields you'll need:
   - optional `pre_click_selector`, `pre_click_wait_ms`, `pre_click_steps`
   - optional `prefer_url_on_pre_click_change` (default `true`)
 
-**Working with ReactJS/SPAs:** Navigation selectors can be volatile in single-page applications.
-See [docs/REACTJS-GUIDE.md](docs/REACTJS-GUIDE.md) for strategies on stable selectors, handling
-loading states, and dealing with hash-based routing.
+### Creating Configs
 
-BAS UIs vary wildly—some need delays, some have iframes, some throw modals. Tweak selectors and add waits in code as needed for your target.
+#### Recommended: Use the Bootstrap Recorder
 
-### Record steps with Playwright codegen
+The bootstrap recorder automatically discovers selectors by observing your actual login/navigation flow:
 
-If the UI is JS-driven and hard to script from static URLs, record your click path and pull selectors:
+- **Via UI**: Bootstrap tab in the web UI (`ui_app.py`)
+- **Via CLI**: `python3 bootstrap_recorder.py --url https://... --site-name my_site`
 
-```bash
-npx playwright codegen https://your-bas-host.example.com/index.html --viewport-size 1920,1080
-```
+#### Alternative: Use a Vendor Template
 
-Useful variant (save script while recording):
+Check `sites/templates-registry.json` for pre-configured templates:
 
 ```bash
-npx playwright codegen https://your-bas-host.example.com/index.html --viewport-size 1920,1080 -o codegen-session.ts
+# For Niagara systems:
+cp sites/niagara.template.json sites/my-niagara-site.json
+
+# For Trane Tracer Synchrony:
+cp sites/trane-tracer-synchrony.template.json sites/my-trane-site.json
 ```
 
-Use the generated click selectors in your site config under `watch[].pre_click_steps`.
+**For ReactJS/SPA systems**: Navigation selectors can be volatile. See [docs/REACTJS-GUIDE.md](docs/REACTJS-GUIDE.md) for strategies on stable selectors, handling loading states, and hash-based routing.
 
-### Bootstrap a config by recording a real session
+📖 **[See sites/README.md](sites/README.md) for complete configuration guide**
 
-For first-time setup, use the standalone recorder to generate a starter config from your
-actual login/navigation flow.
-
-1. Run the recorder locally (headed browser):
-
-   ```bash
-   python3 bootstrap_recorder.py \
-     --url "https://your-bas-host/login" \
-     --site-name "my_site" \
-     --ignore-https-errors \
-     --record-video
-   ```
-
-2. In the opened browser, perform a normal read-only operator flow:
-   - Login
-   - Navigate to the graphics/pages you care about
-   - Return to terminal and press Enter
-
-3. Generated outputs:
-   - `sites/my_site.bootstrap.json` (starter Whistleblower config)
-   - `sites/my_site.steps.json` (suggested `pre_click_steps`)
-   - `data/bootstrap/my_site/<timestamp>/` (raw events, screenshot, optional video)
-
-4. Copy and finalize:
-   - Copy `sites/my_site.bootstrap.json` to your real config (for example `sites/local.json`)
-   - Export env vars for credentials and adjust selectors as needed
-   - Move selected steps from `sites/my_site.steps.json` into `watch[].pre_click_steps`
-
-   Generated bootstrap configs use environment placeholders by default:
-   - `username`: `${MY_SITE_USERNAME}`
-   - `password`: `${MY_SITE_PASSWORD}`
-
-   Example run:
-
-   ```bash
-   export MY_SITE_USERNAME='your_user'
-   export MY_SITE_PASSWORD='your_password'
-
-   python3 whistleblower.py --config sites/my_site.local.json
-   ```
+📖 **[See docs/CLI-GUIDE.md](docs/CLI-GUIDE.md) for bootstrap recorder CLI usage and Playwright codegen**
 
 ---
 
@@ -421,80 +377,45 @@ Mark this complete before cutting `v0.1.0-alpha`:
 
 ---
 
-## 🧠 Analyze Captures with an Agent
+## 🧠 Capture Analysis
 
-After a Whistleblower run completes, you can ask an LLM to review each captured target
-using both `screenshot.png` and `dom.json`.
+Whistleblower can analyze captured screenshots and DOM data using LLMs (OpenAI or xAI/Grok).
 
-Provider options:
+### Using the Web UI
 
-- OpenAI (default): `--provider openai` (or omit `--provider`)
-- xAI/Grok: `--provider xai` or `--provider grok`
+1. Navigate to the **Analysis** tab
+2. Add your API key (or use environment variable/private file)
+3. Select a run or time range
+4. Click **Analyze**
 
-1. Set API key:
+### Using the CLI
 
-   ```bash
-   export OPENAI_API_KEY='your_api_key'
-   ```
+```bash
+# Analyze latest run
+python3 analyze_capture.py --site my-site
 
-   For Grok/xAI instead:
+# Analyze with Grok
+python3 analyze_capture.py --provider grok --site my-site
 
-   ```bash
-   export XAI_API_KEY='your_xai_key'
-   ```
+# Analyze time range
+python3 analyze_capture.py \
+  --site my-site \
+  --start-utc 2026-02-01T00:00:00Z \
+  --end-utc 2026-02-19T23:59:59Z
+```
 
-   `GROK_API_KEY` is also accepted as a fallback.
+### Analysis Outputs
 
-   Optional (recommended): store once in a private file:
+Generated per target:
 
-   ```bash
-   cp .private/openai.env.example .private/openai.env
-   # edit .private/openai.env and set OPENAI_API_KEY or XAI_API_KEY
-   ```
+- `analysis.md` - Human-readable findings
+- `analysis.json` - Structured metadata
 
-   `analyze_capture.py` auto-loads `.private/openai.env`.
+Run-level summary:
 
-2. Analyze the latest run for a site (OpenAI default):
+- `analysis_summary.json` - Overview across all targets
 
-   ```bash
-   python3 analyze_capture.py --site ignition_demo
-   ```
-
-3. Analyze the latest run for a site with Grok/xAI:
-
-   ```bash
-   python3 analyze_capture.py --provider grok --site ignition_demo
-   ```
-
-4. Analyze an explicit run directory:
-
-   ```bash
-   python3 analyze_capture.py --run-dir data/ignition_demo/20260212-174539
-   ```
-
-5. Analyze a UTC time window across runs (optionally scoped by `--site`):
-
-   ```bash
-   python3 analyze_capture.py \
-     --site ignition_demo \
-     --start-utc 2026-02-01T00:00:00Z \
-     --end-utc 2026-02-19T23:59:59Z
-   ```
-
-6. Force per-page output instead of a combined run summary:
-
-   ```bash
-   python3 analyze_capture.py --site ignition_demo --per-page
-   ```
-
-Outputs are written next to each target:
-
-- `analysis.md` (human-readable findings)
-- `analysis.json` (structured metadata)
-
-And one run-level file:
-
-- `analysis_summary.json`
+📖 **[See docs/CLI-GUIDE.md](docs/CLI-GUIDE.md) for complete analysis CLI reference**
 
 ---
 
@@ -510,6 +431,7 @@ And one run-level file:
 
 ### Project Documentation
 
+- **[docs/CLI-GUIDE.md](docs/CLI-GUIDE.md)** - Complete CLI reference for automation and scripting
 - **[docs/TESTING.md](docs/TESTING.md)** - Testing guide: how to run test_configs.py and test_functional.py, add tests for new sites
 - **[docs/TEMPLATES.md](docs/TEMPLATES.md)** - Complete template system documentation and vendor support
 - [sites/README.md](sites/README.md) - Site configuration quick-start and credential management

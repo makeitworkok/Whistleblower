@@ -512,3 +512,8 @@ Whistleblower is released under the **MIT License**.
 You are free to use, modify, and distribute this software for any purpose, including commercial use, without restriction. See [LICENSE](./LICENSE) for the full license text.
 
 Contributions welcome.
+---
+
+## 🤝 Code of Conduct
+
+This project follows the [Contributor Covenant Code of Conduct](CODE_OF_CONDUCT.md). By participating, you are expected to uphold this code. Please report unacceptable behavior to the project maintainers.

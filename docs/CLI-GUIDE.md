@@ -148,6 +148,11 @@ Run LLM-based analysis on captured screenshots and DOM data.
 
 ### API Key Setup
 
+Get your API key from one of these providers:
+
+- **OpenAI**: [platform.openai.com/api-keys](https://platform.openai.com/api-keys)
+- **xAI/Grok**: [console.x.ai](https://console.x.ai/)
+
 #### Method 1: Environment Variable
 
 ```bash

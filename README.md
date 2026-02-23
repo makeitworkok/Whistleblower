@@ -257,6 +257,11 @@ python3 ui_app.py
 
 ### API Keys for Analysis
 
+Analysis requires an API key from one of these providers:
+
+- **OpenAI**: Get your key at [platform.openai.com/api-keys](https://platform.openai.com/api-keys)
+- **xAI/Grok**: Get your key at [console.x.ai](https://console.x.ai/)
+
 You can provide API keys in three ways:
 
 1. **In the UI**: Paste directly into the Analysis tab

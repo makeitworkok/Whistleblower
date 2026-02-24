@@ -40,6 +40,7 @@ class WhistleblowerUIRefactored:
         self.schedule_thread: threading.Thread | None = None
         self.analysis_thread: threading.Thread | None = None
         self.schedule_running = False
+        self.bootstrap_running = False
 
         # Log queue system
         self.log_queue: queue.Queue[str] = queue.Queue()
@@ -342,18 +343,31 @@ class WhistleblowerUIRefactored:
 
     def _show_initialize_button(self) -> None:
         """Show Initialize Site button if site is loaded."""
-        # Clear old button if exists
+        # Clear old buttons if exist
         for widget in self.setup_tab.winfo_children():
-            if isinstance(widget, ttk.Button) and widget.cget("text") == "Initialize Site":
+            if isinstance(widget, ttk.Button) and widget.cget("text") in ["Initialize Site", "Stop Bootstrap"]:
                 widget.destroy()
         
         # Add button to initialize site
-        init_button = ttk.Button(
-            self.setup_tab,
+        button_frame = ttk.Frame(self.setup_tab)
+        button_frame.pack(pady=10)
+        
+        self.init_btn = ttk.Button(
+            button_frame,
             text="Initialize Site",
             command=self._initialize_site,
+            width=20,
         )
-        init_button.pack(pady=10)
+        self.init_btn.pack(side=tk.LEFT, padx=5)
+        
+        self.stop_bootstrap_btn = ttk.Button(
+            button_frame,
+            text="Stop Bootstrap",
+            command=self._stop_bootstrap,
+            width=20,
+            state="disabled",
+        )
+        self.stop_bootstrap_btn.pack(side=tk.LEFT, padx=5)
 
     def _display_site_details(self, config: dict[str, Any]) -> None:
         """Display site configuration in read-only text area."""
@@ -492,6 +506,10 @@ Analysis Settings:
             messagebox.showwarning("Warning", "Bootstrap is already running")
             return
         
+        self.bootstrap_running = True
+        self.init_btn.config(state="disabled")
+        self.stop_bootstrap_btn.config(state="normal")
+        
         self._log(f"=== Initializing Site: {self.current_site} ===")
         
         self.bootstrap_thread = threading.Thread(
@@ -501,11 +519,18 @@ Analysis Settings:
         )
         self.bootstrap_thread.start()
 
+    def _stop_bootstrap(self) -> None:
+        """Stop the bootstrap process."""
+        self.bootstrap_running = False
+        self._log("Bootstrap stopped by user")
+        self.stop_bootstrap_btn.config(state="disabled")
+        self.init_btn.config(state="normal")
+
     def _run_bootstrap_thread(self, site_name: str, config: dict[str, Any]) -> None:
         """Run bootstrap in background thread."""
         try:
             self._log(f"Initializing {site_name} with URL: {config['bootstrap_url']}")
-            self._log("This may take a few minutes...")
+            self._log("This may take a few minutes... Use Stop button to cancel.")
             
             result = bootstrap_recorder.run_bootstrap(
                 url=config["bootstrap_url"],
@@ -518,13 +543,24 @@ Analysis Settings:
                 browser_type=self.browser_var.get(),
             )
             
+            # Check if user stopped it
+            if not self.bootstrap_running:
+                self._log("Bootstrap cancelled")
+                return
+            
             self._log(f"✓ Site initialized successfully!")
             self._log(f"Configuration: {result['config_out']}")
             self._log(f"Steps: {result['steps_out']}")
-            messagebox.showinfo("Success", f"Site '{site_name}' initialized. Ready to capture.")
+            self.root.after(0, lambda: messagebox.showinfo("Success", f"Site '{site_name}' initialized. Ready to capture."))
         except Exception as exc:
             self._log(f"ERROR: {exc}")
-            messagebox.showerror("Error", f"Bootstrap failed: {exc}")
+            self.root.after(0, lambda: messagebox.showerror("Error", f"Bootstrap failed: {exc}"))
+        finally:
+            self.bootstrap_running = False
+            self.root.after(0, lambda: (
+                self.stop_bootstrap_btn.config(state="disabled"),
+                self.init_btn.config(state="normal"),
+            ))
 
     def _start_capture(self) -> None:
         """Start capture (now or schedule)."""

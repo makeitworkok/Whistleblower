@@ -96,6 +96,11 @@ class WhistleblowerUI:
         self.notebook.add(self.capture_tab, text="Capture")
         self._create_capture_tab()
         
+        # Schedule tab
+        self.schedule_tab = ttk.Frame(self.notebook, padding="10")
+        self.notebook.add(self.schedule_tab, text="Schedule")
+        self._create_schedule_tab()
+        
         # Analysis tab
         self.analysis_tab = ttk.Frame(self.notebook, padding="10")
         self.notebook.add(self.analysis_tab, text="Analysis")
@@ -161,7 +166,7 @@ class WhistleblowerUI:
         options_frame = ttk.LabelFrame(self.bootstrap_tab, text="Options", padding="5")
         options_frame.grid(row=4, column=0, columnspan=2, sticky="ew", pady=10)
         
-        self.bootstrap_ignore_https = tk.BooleanVar(value=False)
+        self.bootstrap_ignore_https = tk.BooleanVar(value=True)
         ttk.Checkbutton(
             options_frame,
             text="Ignore HTTPS errors",
@@ -450,6 +455,189 @@ class WhistleblowerUI:
             # Re-enable button
             self.root.after(0, lambda: self.capture_btn.config(state='normal'))
     
+    def _create_schedule_tab(self) -> None:
+        """Create the Schedule tab for recurring captures."""
+        # Config file selection
+        ttk.Label(self.schedule_tab, text="Config File:").grid(row=0, column=0, sticky=tk.W, pady=5)
+        self.schedule_config = tk.StringVar(value="")
+        config_frame = ttk.Frame(self.schedule_tab)
+        config_frame.grid(row=0, column=1, sticky="ew", pady=5, padx=5)
+        self.schedule_tab.columnconfigure(1, weight=1)
+        
+        ttk.Entry(config_frame, textvariable=self.schedule_config, width=40).pack(side=tk.LEFT, fill=tk.X, expand=True)
+        ttk.Button(config_frame, text="Browse...", command=self._browse_schedule_config).pack(side=tk.LEFT, padx=(5, 0))
+        
+        # Data directory
+        ttk.Label(self.schedule_tab, text="Data Dir:").grid(row=1, column=0, sticky=tk.W, pady=5)
+        self.schedule_data_dir = tk.StringVar(value="data")
+        data_frame = ttk.Frame(self.schedule_tab)
+        data_frame.grid(row=1, column=1, sticky="ew", pady=5, padx=5)
+        ttk.Entry(data_frame, textvariable=self.schedule_data_dir, width=40).pack(side=tk.LEFT, fill=tk.X, expand=True)
+        ttk.Button(data_frame, text="Browse...", command=self._browse_schedule_data_dir).pack(side=tk.LEFT, padx=(5, 0))
+        
+        # Schedule settings
+        schedule_frame = ttk.LabelFrame(self.schedule_tab, text="Schedule", padding="5")
+        schedule_frame.grid(row=2, column=0, columnspan=2, sticky="ew", pady=10)
+        
+        ttk.Label(schedule_frame, text="Interval (minutes):").grid(row=0, column=0, sticky=tk.W, padx=5)
+        self.schedule_interval = tk.IntVar(value=60)
+        ttk.Spinbox(schedule_frame, from_=1, to=1440, increment=5, textvariable=self.schedule_interval, width=10).grid(
+            row=0, column=1, padx=5
+        )
+        
+        # Timeout settings (same as capture)
+        timeout_frame = ttk.LabelFrame(self.schedule_tab, text="Timeout Settings (ms)", padding="5")
+        timeout_frame.grid(row=3, column=0, columnspan=2, sticky="ew", pady=10)
+        
+        ttk.Label(timeout_frame, text="Navigation:").grid(row=0, column=0, sticky=tk.W, padx=5)
+        self.schedule_timeout = tk.IntVar(value=30000)
+        ttk.Spinbox(timeout_frame, from_=5000, to=120000, increment=5000, textvariable=self.schedule_timeout, width=10).grid(
+            row=0, column=1, padx=5
+        )
+        
+        ttk.Label(timeout_frame, text="Settle:").grid(row=0, column=2, sticky=tk.W, padx=5)
+        self.schedule_settle = tk.IntVar(value=5000)
+        ttk.Spinbox(timeout_frame, from_=0, to=60000, increment=1000, textvariable=self.schedule_settle, width=10).grid(
+            row=0, column=3, padx=5
+        )
+        
+        # Start/Stop buttons frame
+        button_frame = ttk.Frame(self.schedule_tab)
+        button_frame.grid(row=4, column=0, columnspan=2, pady=20)
+        
+        self.schedule_start_btn = ttk.Button(
+            button_frame,
+            text="Start Schedule",
+            command=self._start_schedule
+        )
+        self.schedule_start_btn.pack(side=tk.LEFT, padx=5)
+        
+        self.schedule_stop_btn = ttk.Button(
+            button_frame,
+            text="Stop Schedule",
+            command=self._stop_schedule,
+            state='disabled'
+        )
+        self.schedule_stop_btn.pack(side=tk.LEFT, padx=5)
+        
+        # Status
+        self.schedule_status = tk.StringVar(value="Not running")
+        ttk.Label(self.schedule_tab, text="Status:").grid(row=5, column=0, sticky=tk.W, pady=5, padx=5)
+        ttk.Label(self.schedule_tab, textvariable=self.schedule_status).grid(row=5, column=1, sticky=tk.W, pady=5, padx=5)
+        
+        # Schedule control
+        self.schedule_thread: threading.Thread | None = None
+        self.schedule_running = False
+    
+    def _browse_schedule_config(self) -> None:
+        """Browse for schedule config file."""
+        filename = filedialog.askopenfilename(
+            initialdir="sites",
+            title="Select Config File",
+            filetypes=(("JSON files", "*.json"), ("All files", "*.*"))
+        )
+        if filename:
+            self.schedule_config.set(filename)
+    
+    def _browse_schedule_data_dir(self) -> None:
+        """Browse for schedule data directory."""
+        directory = filedialog.askdirectory(initialdir=self.schedule_data_dir.get())
+        if directory:
+            self.schedule_data_dir.set(directory)
+    
+    def _start_schedule(self) -> None:
+        """Start scheduled captures."""
+        if self.schedule_running:
+            messagebox.showwarning("Warning", "Schedule is already running")
+            return
+        
+        config_path = self.schedule_config.get().strip()
+        if not config_path:
+            messagebox.showerror("Error", "Please select a config file")
+            return
+        
+        if not Path(config_path).exists():
+            messagebox.showerror("Error", f"Config file not found: {config_path}")
+            return
+        
+        self.schedule_running = True
+        self.schedule_start_btn.config(state='disabled')
+        self.schedule_stop_btn.config(state='normal')
+        self.schedule_status.set("Running - Next capture in progress")
+        
+        self._log("=== Starting Scheduled Captures ===")
+        self._log(f"Config: {config_path}")
+        self._log(f"Interval: {self.schedule_interval.get()} minutes")
+        
+        self.schedule_thread = threading.Thread(
+            target=self._run_schedule_thread,
+            args=(
+                config_path,
+                self.schedule_data_dir.get(),
+                self.schedule_interval.get(),
+                self.schedule_timeout.get(),
+                self.schedule_settle.get(),
+            ),
+            daemon=True,
+        )
+        self.schedule_thread.start()
+    
+    def _stop_schedule(self) -> None:
+        """Stop scheduled captures."""
+        self.schedule_running = False
+        self.schedule_start_btn.config(state='normal')
+        self.schedule_stop_btn.config(state='disabled')
+        self.schedule_status.set("Stopped")
+        self._log("Scheduler stopped by user")
+    
+    def _run_schedule_thread(
+        self,
+        config_path: str,
+        data_dir: str,
+        interval_minutes: int,
+        timeout_ms: int,
+        settle_ms: int,
+    ) -> None:
+        """Run scheduled captures in background thread."""
+        import time
+        
+        capture_count = 0
+        try:
+            while self.schedule_running:
+                capture_count += 1
+                self._log(f"\n[Capture #{capture_count}] Starting at {datetime.now().strftime('%H:%M:%S')}")
+                
+                try:
+                    result = whistleblower.run_capture(
+                        config_path=config_path,
+                        data_dir=data_dir,
+                        timeout_ms=timeout_ms,
+                        settle_ms=settle_ms,
+                    )
+                    self._log(f"✓ Capture #{capture_count} completed: {result['run_dir']}")
+                except Exception as exc:
+                    self._log(f"✗ Capture #{capture_count} failed: {exc}")
+                
+                # Update status
+                next_in = interval_minutes * 60
+                self.root.after(0, lambda ni=next_in: self.schedule_status.set(f"Next capture in {ni}s"))
+                
+                # Sleep in 1-second intervals to allow quick stopping
+                sleep_remaining = interval_minutes * 60
+                while sleep_remaining > 0 and self.schedule_running:
+                    time.sleep(1)
+                    sleep_remaining -= 1
+                    if sleep_remaining % 10 == 0 and sleep_remaining > 0:
+                        self.root.after(0, lambda sr=sleep_remaining: self.schedule_status.set(f"Next capture in {sr}s"))
+        
+        except Exception as exc:
+            self._log(f"ERROR in scheduler: {exc}")
+        finally:
+            self.schedule_running = False
+            self.root.after(0, lambda: self.schedule_start_btn.config(state='normal'))
+            self.root.after(0, lambda: self.schedule_stop_btn.config(state='disabled'))
+            self.root.after(0, lambda: self.schedule_status.set("Stopped"))
+    
     def _create_analysis_tab(self) -> None:
         """Create the Analysis tab widgets."""
         # Run directory selection
@@ -528,13 +716,31 @@ class WhistleblowerUI:
             variable=self.analysis_combine
         ).grid(row=0, column=2, sticky=tk.W, padx=5)
         
+        # Date range filter
+        date_frame = ttk.LabelFrame(self.analysis_tab, text="Date Range Filter (Optional)", padding="5")
+        date_frame.grid(row=6, column=0, columnspan=2, sticky="ew", pady=10)
+        date_frame.columnconfigure(1, weight=1)
+        date_frame.columnconfigure(3, weight=1)
+        
+        ttk.Label(date_frame, text="Start Date (YYYY-MM-DD HH:MM):").grid(row=0, column=0, sticky=tk.W, padx=5)
+        self.analysis_start_utc = tk.StringVar(value="")
+        ttk.Entry(date_frame, textvariable=self.analysis_start_utc, width=30).grid(row=0, column=1, padx=5, sticky="ew")
+        
+        ttk.Label(date_frame, text="End Date (YYYY-MM-DD HH:MM):").grid(row=0, column=2, sticky=tk.W, padx=5)
+        self.analysis_end_utc = tk.StringVar(value="")
+        ttk.Entry(date_frame, textvariable=self.analysis_end_utc, width=30).grid(row=0, column=3, padx=5, sticky="ew")
+        
+        ttk.Label(date_frame, text="(Leave blank for all runs)", font=("TkDefaultFont", 9, "italic")).grid(
+            row=1, column=0, columnspan=4, pady=5
+        )
+        
         # Start button
         self.analysis_btn = ttk.Button(
             self.analysis_tab,
             text="Start Analysis",
             command=self._start_analysis
         )
-        self.analysis_btn.grid(row=6, column=0, columnspan=2, pady=20)
+        self.analysis_btn.grid(row=7, column=0, columnspan=2, pady=20)
     
     def _browse_analysis_run_dir(self) -> None:
         """Browse for analysis run directory."""
@@ -584,6 +790,8 @@ class WhistleblowerUI:
                 self.analysis_run_dir.get() or None,
                 self.analysis_data_dir.get(),
                 self.analysis_site.get() or None,
+                self.analysis_start_utc.get().strip() or None,
+                self.analysis_end_utc.get().strip() or None,
                 provider,
                 api_key,
                 self.analysis_max_dom.get(),
@@ -598,6 +806,8 @@ class WhistleblowerUI:
         run_dir: str | None,
         data_dir: str,
         site: str | None,
+        start_utc: str | None,
+        end_utc: str | None,
         provider: str,
         api_key: str,
         max_dom_chars: int,
@@ -610,6 +820,8 @@ class WhistleblowerUI:
                 run_dir=run_dir,
                 data_dir=data_dir,
                 site=site,
+                start_utc=start_utc,
+                end_utc=end_utc,
                 provider=provider,
                 api_key=api_key,
                 max_dom_chars=max_dom_chars,

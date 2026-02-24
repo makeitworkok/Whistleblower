@@ -2,7 +2,7 @@
 """
 PyInstaller spec file for Whistleblower Tkinter UI.
 
-This builds a Windows executable with all dependencies bundled.
+This builds executables for macOS (.app) and Windows (.exe) with all dependencies bundled.
 
 To build:
     pyinstaller whistleblower.spec
@@ -24,23 +24,46 @@ datas = [
     ('requirements.txt', '.'),
 ]
 
-# Test imports for site_config and other modules
+# Platform-specific icon
+if sys.platform == 'darwin':
+    icon_file = 'assets/icon.icns'
+elif sys.platform == 'win32':
+    icon_file = 'assets/icon.ico'
+else:
+    icon_file = None
+
+# Hidden imports for modules that PyInstaller might miss
 hiddenimports = [
+    # Core application modules
     'analyze_capture',
     'bootstrap_recorder',
     'whistleblower',
     'site_config',
+    
+    # Playwright and browser automation
     'playwright',
     'playwright.sync_api',
+    'playwright._impl._api_types',
+    'playwright._impl._connection',
+    
+    # Tkinter GUI
     'tkinter',
     'tkinter.ttk',
     'tkinter.scrolledtext',
     'tkinter.filedialog',
     'tkinter.messagebox',
+    
+    # API and HTTP
+    'requests',
+    'urllib3',
+    'certifi',
+    
+    # Standard library essentials
     'queue',
     'threading',
     'json',
     'pathlib',
+    'subprocess',
 ]
 
 # Analysis - find all Python modules and dependencies
@@ -54,15 +77,36 @@ a = Analysis(
     hooksconfig={},
     runtime_hooks=[],
     excludes=[
+        # GUI frameworks we don't use
         'matplotlib',
-        'numpy',
-        'pandas',
-        'PIL',
         'PyQt5',
         'PyQt6',
         'PySide2',
         'PySide6',
         'wx',
+        
+        # Data science libraries (not needed)
+        'numpy',
+        'pandas',
+        'scipy',
+        'sklearn',
+        
+        # Image processing (except Pillow for icons)
+        'PIL.ImageQt',
+        'PIL.ImageTk',
+        
+        # Development/testing tools
+        'pytest',
+        'unittest',
+        'doctest',
+        'pdb',
+        'pydoc',
+        
+        # Other unused modules
+        'email',
+        'ftplib',
+        'telnetlib',
+        'xmlrpc',
     ],
     win_no_prefer_redirects=False,
     win_private_assemblies=False,
@@ -88,13 +132,13 @@ exe = EXE(
     bootloader_ignore_signals=False,
     strip=False,
     upx=True,
-    console=False,  # Set to False for GUI app (no console window)
+    console=False,  # No console window for GUI app
     disable_windowed_traceback=False,
     argv_emulation=False,
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon=None,  # Add icon='icon.ico' if you have an icon file
+    icon=icon_file if icon_file and Path(icon_file).exists() else None,
 )
 
 # COLLECT - gather all files for distribution
@@ -108,3 +152,24 @@ coll = COLLECT(
     upx_exclude=[],
     name='Whistleblower',
 )
+
+# macOS Bundle configuration
+if sys.platform == 'darwin':
+    app = BUNDLE(
+        coll,
+        name='Whistleblower.app',
+        icon=icon_file,
+        bundle_identifier='com.makeitworkok.whistleblower',
+        version='1.0.0',
+        info_plist={
+            'NSPrincipalClass': 'NSApplication',
+            'NSAppleScriptEnabled': False,
+            'CFBundleName': 'Whistleblower',
+            'CFBundleDisplayName': 'Whistleblower',
+            'CFBundleGetInfoString': 'Whistleblower - BAS Documentation System',
+            'CFBundleVersion': '1.0.0',
+            'CFBundleShortVersionString': '1.0.0',
+            'NSHumanReadableCopyright': 'Copyright © 2026 MakeItWorkOK',
+            'NSHighResolutionCapable': 'True',
+        },
+    )

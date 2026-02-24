@@ -291,8 +291,8 @@ def make_run_dir(data_dir: Path, site_name: str) -> Path:
 
 def login(page: Page, cfg: SiteConfig, timeout_ms: int) -> None:
     page.goto(cfg.base_url, wait_until="domcontentloaded", timeout=timeout_ms)
-    # Wait for any redirects to complete
-    page.wait_for_load_state("networkidle", timeout=min(timeout_ms, 10000))
+    # Wait for any redirects to complete (use full timeout for slow-loading sites)
+    page.wait_for_load_state("networkidle", timeout=timeout_ms)
 
     def login_succeeded() -> bool:
         if page.locator(cfg.login.success_selector).first.is_visible():
@@ -347,7 +347,8 @@ def login(page: Page, cfg: SiteConfig, timeout_ms: int) -> None:
                 continue
             break
 
-        form_timeout_ms = min(timeout_ms, 10000)
+        # Use full timeout for form operations
+        form_timeout_ms = timeout_ms
         
         # Fill username if available
         if user_field_ready():
@@ -428,7 +429,8 @@ def submit_login(page: Page, cfg: SiteConfig, timeout_ms: int) -> None:
         raise TimeoutError("Enabled login controls are not available on the page.")
 
     user, password, submit = controls
-    form_timeout_ms = min(timeout_ms, 10000)
+    # Use full timeout for form operations
+    form_timeout_ms = timeout_ms
     user.fill(cfg.login.username, timeout=form_timeout_ms)
     password.fill(cfg.login.password, timeout=form_timeout_ms)
     try:

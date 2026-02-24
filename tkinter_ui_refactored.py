@@ -338,6 +338,22 @@ class WhistleblowerUIRefactored:
             # Also update capture and analysis dropdowns
             self.capture_site_var.set(site_name)
             self.analysis_site_var.set(site_name)
+            self._show_initialize_button()
+
+    def _show_initialize_button(self) -> None:
+        """Show Initialize Site button if site is loaded."""
+        # Clear old button if exists
+        for widget in self.setup_tab.winfo_children():
+            if isinstance(widget, ttk.Button) and widget.cget("text") == "Initialize Site":
+                widget.destroy()
+        
+        # Add button to initialize site
+        init_button = ttk.Button(
+            self.setup_tab,
+            text="Initialize Site",
+            command=self._initialize_site,
+        )
+        init_button.pack(pady=10)
 
     def _display_site_details(self, config: dict[str, Any]) -> None:
         """Display site configuration in read-only text area."""
@@ -465,6 +481,50 @@ Analysis Settings:
             self.site_details_text.config(state="normal")
             self.site_details_text.delete(1.0, tk.END)
             self.site_details_text.config(state="disabled")
+
+    def _initialize_site(self) -> None:
+        """Initialize site by running bootstrap."""
+        if not self.current_site or not self.current_config:
+            messagebox.showerror("Error", "No site selected")
+            return
+        
+        if self.bootstrap_thread and self.bootstrap_thread.is_alive():
+            messagebox.showwarning("Warning", "Bootstrap is already running")
+            return
+        
+        self._log(f"=== Initializing Site: {self.current_site} ===")
+        
+        self.bootstrap_thread = threading.Thread(
+            target=self._run_bootstrap_thread,
+            args=(self.current_site, self.current_config),
+            daemon=True,
+        )
+        self.bootstrap_thread.start()
+
+    def _run_bootstrap_thread(self, site_name: str, config: dict[str, Any]) -> None:
+        """Run bootstrap in background thread."""
+        try:
+            self._log(f"Initializing {site_name} with URL: {config['bootstrap_url']}")
+            self._log("This may take a few minutes...")
+            
+            result = bootstrap_recorder.run_bootstrap(
+                url=config["bootstrap_url"],
+                site_name=site_name,
+                output_dir=config["directories"]["bootstrap_artifacts"],
+                viewport_width=config["viewport"]["width"],
+                viewport_height=config["viewport"]["height"],
+                ignore_https_errors=config["ignore_https_errors"],
+                record_video=False,
+                browser_type=self.browser_var.get(),
+            )
+            
+            self._log(f"✓ Site initialized successfully!")
+            self._log(f"Configuration: {result['config_out']}")
+            self._log(f"Steps: {result['steps_out']}")
+            messagebox.showinfo("Success", f"Site '{site_name}' initialized. Ready to capture.")
+        except Exception as exc:
+            self._log(f"ERROR: {exc}")
+            messagebox.showerror("Error", f"Bootstrap failed: {exc}")
 
     def _start_capture(self) -> None:
         """Start capture (now or schedule)."""

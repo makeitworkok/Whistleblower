@@ -86,14 +86,14 @@ class WhistleblowerUIRefactored:
         self.notebook.add(self.capture_tab, text="Capture")
         self._create_capture_tab()
 
-        # Analysis tab
-        analysis_container = ttk.Frame(self.notebook)
-        self.notebook.add(analysis_container, text="Analysis")
+        # Analysis tab (store container reference for enabling/disabling)
+        self.analysis_container = ttk.Frame(self.notebook)
+        self.notebook.add(self.analysis_container, text="Analysis")
         
         # Create scrollable analysis tab
-        analysis_canvas = tk.Canvas(analysis_container, bg="white", highlightthickness=0)
+        analysis_canvas = tk.Canvas(self.analysis_container, bg="white", highlightthickness=0)
         analysis_scrollbar = ttk.Scrollbar(
-            analysis_container, orient="vertical", command=analysis_canvas.yview
+            self.analysis_container, orient="vertical", command=analysis_canvas.yview
         )
         self.analysis_tab = ttk.Frame(analysis_canvas, padding="10")
         
@@ -114,6 +114,9 @@ class WhistleblowerUIRefactored:
         analysis_canvas.bind_all("<MouseWheel>", _on_mousewheel)
         
         self._create_analysis_tab()
+        
+        # Check API keys and disable Analysis tab if no keys present
+        self._update_analysis_tab_state()
 
         # Log output frame
         log_frame = ttk.LabelFrame(main_frame, text="Output Log", padding="5")
@@ -298,10 +301,125 @@ class WhistleblowerUIRefactored:
         else:
             self.xai_status_label.config(text="✗ Not set", foreground="red")
 
+    def _update_analysis_tab_state(self) -> None:
+        """Enable or disable Analysis tab based on API key presence."""
+        # Check environment variables first
+        openai = os.getenv("OPENAI_API_KEY", "").strip()
+        xai = os.getenv("XAI_API_KEY", "").strip()
+        
+        # If no env vars, check if keys are in the UI fields (loaded from file but not yet saved)
+        if not openai and not xai and hasattr(self, 'openai_key_var') and hasattr(self, 'xai_key_var'):
+            openai = self.openai_key_var.get().strip()
+            xai = self.xai_key_var.get().strip()
+        
+        # Get the tab index for Analysis tab
+        tab_index = None
+        for i in range(self.notebook.index("end")):
+            if self.notebook.tab(i, "text") == "Analysis":
+                tab_index = i
+                break
+        
+        if tab_index is not None:
+            if openai or xai:
+                # Enable the tab
+                self.notebook.tab(tab_index, state="normal")
+            else:
+                # Disable the tab
+                self.notebook.tab(tab_index, state="disabled")
+
+    def _validate_api_key(self, key: str, provider: str) -> tuple[bool, str]:
+        """Validate an API key by making a test API call.
+        
+        Returns:
+            tuple: (is_valid, error_message)
+        """
+        try:
+            import requests
+        except ImportError:
+            return False, "requests library not installed (run: pip install requests)"
+        
+        if not key:
+            return False, "No key provided"
+        
+        try:
+            if provider == "openai":
+                # Test OpenAI key with a simple models list request
+                response = requests.get(
+                    "https://api.openai.com/v1/models",
+                    headers={"Authorization": f"Bearer {key}"},
+                    timeout=10
+                )
+                if response.status_code == 200:
+                    return True, "Valid"
+                elif response.status_code == 401:
+                    return False, "Invalid or expired key"
+                else:
+                    return False, f"API error: {response.status_code}"
+                    
+            elif provider == "xai":
+                # Test xAI key with a simple models list request
+                response = requests.get(
+                    "https://api.x.ai/v1/models",
+                    headers={"Authorization": f"Bearer {key}"},
+                    timeout=10
+                )
+                if response.status_code == 200:
+                    return True, "Valid"
+                elif response.status_code == 401:
+                    return False, "Invalid or expired key"
+                else:
+                    return False, f"API error: {response.status_code}"
+            else:
+                return False, "Unknown provider"
+                
+        except requests.exceptions.RequestException as e:
+            return False, f"Network error: {str(e)[:50]}"
+        except Exception as e:
+            return False, f"Error: {str(e)[:50]}"
+
     def _save_api_keys(self) -> None:
-        """Save API keys to persistent storage."""
+        """Save API keys to persistent storage after validation."""
         openai = self.openai_key_var.get().strip()
         xai = self.xai_key_var.get().strip()
+        
+        if not openai and not xai:
+            messagebox.showwarning("Warning", "Please enter at least one API key.")
+            return
+        
+        # Validate keys
+        self._log("Validating API keys...")
+        validation_results = []
+        valid_keys = []
+        
+        if openai:
+            self._log("Testing OpenAI key...")
+            is_valid, msg = self._validate_api_key(openai, "openai")
+            if is_valid:
+                self._log("✓ OpenAI key is valid")
+                validation_results.append("✓ OpenAI key validated")
+                valid_keys.append("openai")
+            else:
+                self._log(f"✗ OpenAI key validation failed: {msg}")
+                validation_results.append(f"✗ OpenAI: {msg}")
+        
+        if xai:
+            self._log("Testing xAI key...")
+            is_valid, msg = self._validate_api_key(xai, "xai")
+            if is_valid:
+                self._log("✓ xAI key is valid")
+                validation_results.append("✓ xAI key validated")
+                valid_keys.append("xai")
+            else:
+                self._log(f"✗ xAI key validation failed: {msg}")
+                validation_results.append(f"✗ xAI: {msg}")
+        
+        if not valid_keys:
+            messagebox.showerror(
+                "Validation Failed",
+                "All API keys failed validation:\n\n" + "\n".join(validation_results) + 
+                "\n\nPlease check your keys and try again."
+            )
+            return
         
         # Save to user's home directory
         env_file = Path.home() / ".whistleblower_env"
@@ -310,20 +428,23 @@ class WhistleblowerUIRefactored:
             with open(env_file, "w") as f:
                 f.write("# Whistleblower API Keys\n")
                 f.write("# These keys are used for AI-powered analysis\n\n")
-                if openai:
+                # Only save validated keys
+                if "openai" in valid_keys:
                     f.write(f"OPENAI_API_KEY={openai}\n")
-                if xai:
+                    os.environ["OPENAI_API_KEY"] = openai
+                if "xai" in valid_keys:
                     f.write(f"XAI_API_KEY={xai}\n")
-            
-            # Set in current environment
-            if openai:
-                os.environ["OPENAI_API_KEY"] = openai
-            if xai:
-                os.environ["XAI_API_KEY"] = xai
+                    os.environ["XAI_API_KEY"] = xai
             
             self._update_api_status()
-            self._log("✓ API keys saved successfully")
-            messagebox.showinfo("Success", f"API keys saved to:\n{env_file}\n\nKeys are now active for this session.")
+            self._update_analysis_tab_state()
+            self._log("✓ Validated keys saved successfully")
+            
+            # Show validation results
+            result_msg = "Validation Results:\n\n" + "\n".join(validation_results)
+            result_msg += f"\n\nValid keys saved to:\n{env_file}\n\nAnalysis tab is now enabled."
+            
+            messagebox.showinfo("Keys Saved", result_msg)
         except Exception as e:
             self._log(f"ERROR saving API keys: {e}")
             messagebox.showerror("Error", f"Failed to save API keys: {e}")

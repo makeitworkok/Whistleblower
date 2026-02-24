@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# Copyright (c) 2025-2026 Chris Favre - MIT License
+# See LICENSE file for full terms
 """Whistleblower: read-only BAS web UI capture tool."""
 
 from __future__ import annotations
@@ -289,8 +291,8 @@ def make_run_dir(data_dir: Path, site_name: str) -> Path:
 
 def login(page: Page, cfg: SiteConfig, timeout_ms: int) -> None:
     page.goto(cfg.base_url, wait_until="domcontentloaded", timeout=timeout_ms)
-    # Wait for any redirects to complete
-    page.wait_for_load_state("networkidle", timeout=min(timeout_ms, 10000))
+    # Wait for any redirects to complete (use full timeout for slow-loading sites)
+    page.wait_for_load_state("networkidle", timeout=timeout_ms)
 
     def login_succeeded() -> bool:
         if page.locator(cfg.login.success_selector).first.is_visible():
@@ -345,7 +347,8 @@ def login(page: Page, cfg: SiteConfig, timeout_ms: int) -> None:
                 continue
             break
 
-        form_timeout_ms = min(timeout_ms, 10000)
+        # Use full timeout for form operations
+        form_timeout_ms = timeout_ms
         
         # Fill username if available
         if user_field_ready():
@@ -426,7 +429,8 @@ def submit_login(page: Page, cfg: SiteConfig, timeout_ms: int) -> None:
         raise TimeoutError("Enabled login controls are not available on the page.")
 
     user, password, submit = controls
-    form_timeout_ms = min(timeout_ms, 10000)
+    # Use full timeout for form operations
+    form_timeout_ms = timeout_ms
     user.fill(cfg.login.username, timeout=form_timeout_ms)
     password.fill(cfg.login.password, timeout=form_timeout_ms)
     try:
@@ -823,21 +827,69 @@ def run(
     return run_dir
 
 
+def run_capture(
+    config_path: str | Path,
+    data_dir: str | Path = "data",
+    timeout_ms: int = 30000,
+    settle_ms: int = 5000,
+    post_login_wait_ms: int = 10000,
+    headed: bool = False,
+    record_video: bool = False,
+    video_width: int | None = None,
+    video_height: int | None = None,
+) -> dict[str, Any]:
+    """
+    Run a capture session on a configured site.
+    
+    Args:
+        config_path: Path to site config JSON file
+        data_dir: Output root for captured artifacts
+        timeout_ms: Navigation/action timeout in milliseconds
+        settle_ms: Additional wait time before capture after page is ready
+        post_login_wait_ms: Additional wait after login before capture navigation
+        headed: Run browser in headed mode (visible)
+        record_video: Record a video of the browser session
+        video_width: Video width in pixels (defaults to viewport width)
+        video_height: Video height in pixels (defaults to viewport height)
+    
+    Returns:
+        Dictionary with run_dir path and capture summary
+    """
+    config_path = Path(config_path)
+    data_dir = Path(data_dir)
+
+    if video_width is not None and video_width < 1:
+        raise ValueError("`video_width` must be >= 1.")
+    if video_height is not None and video_height < 1:
+        raise ValueError("`video_height` must be >= 1.")
+
+    cfg = parse_site_config(load_json(config_path))
+    run_dir = run(
+        cfg=cfg,
+        data_dir=data_dir,
+        timeout_ms=timeout_ms,
+        settle_ms=settle_ms,
+        post_login_wait_ms=post_login_wait_ms,
+        headed=headed,
+        record_video=record_video,
+        video_width=video_width,
+        video_height=video_height,
+    )
+    
+    return {
+        "run_dir": str(run_dir),
+        "site_name": cfg.name,
+        "targets_captured": len(cfg.watch),
+    }
+
+
 def main() -> int:
+    """CLI entry point for whistleblower capture."""
     args = parse_args()
-    config_path = Path(args.config)
-    data_dir = Path(args.data_dir)
-
     try:
-        if args.video_width is not None and args.video_width < 1:
-            raise ValueError("`--video-width` must be >= 1.")
-        if args.video_height is not None and args.video_height < 1:
-            raise ValueError("`--video-height` must be >= 1.")
-
-        cfg = parse_site_config(load_json(config_path))
-        run_dir = run(
-            cfg=cfg,
-            data_dir=data_dir,
+        result = run_capture(
+            config_path=args.config,
+            data_dir=args.data_dir,
             timeout_ms=args.timeout_ms,
             settle_ms=args.settle_ms,
             post_login_wait_ms=args.post_login_wait_ms,
@@ -846,15 +898,14 @@ def main() -> int:
             video_width=args.video_width,
             video_height=args.video_height,
         )
+        print(f"Capture completed: {result['run_dir']}")
+        return 0
     except (ValueError, TimeoutError) as exc:
         print(f"ERROR: {exc}", file=sys.stderr)
         return 1
     except Exception as exc:  # noqa: BLE001
         print(f"UNHANDLED ERROR: {exc}", file=sys.stderr)
         return 1
-
-    print(f"Capture completed: {run_dir}")
-    return 0
 
 
 if __name__ == "__main__":

@@ -1,3 +1,5 @@
+# Copyright (c) 2025-2026 Chris Favre - MIT License
+# See LICENSE file for full terms
 import re
 from playwright.sync_api import Playwright, sync_playwright, expect
 

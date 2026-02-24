@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# Copyright (c) 2025-2026 Chris Favre - MIT License
+# See LICENSE file for full terms
 """Analyze Whistleblower capture artifacts using an LLM with image + DOM context."""
 
 from __future__ import annotations
@@ -495,75 +497,116 @@ def load_env_file(path: Path) -> None:
             os.environ.setdefault(key, value)
 
 
-def main() -> int:
-    args = parse_args()
-    load_env_file(Path(args.env_file))
-    provider = normalize_provider(args.provider)
-    model = args.model or default_model_for_provider(provider)
-    endpoint = args.endpoint or default_endpoint_for_provider(provider)
-    api_key_env = args.api_key_env or default_api_key_env_for_provider(provider)
-    api_key = os.getenv(api_key_env)
+def run_analysis(
+    run_dir: str | Path | None = None,
+    data_dir: str | Path = "data",
+    site: str | None = None,
+    start_utc: str | None = None,
+    end_utc: str | None = None,
+    provider: str = "openai",
+    model: str | None = None,
+    endpoint: str | None = None,
+    api_key: str | None = None,
+    api_key_env: str | None = None,
+    max_dom_chars: int = 12000,
+    custom_prompt: str | None = None,
+    combine_run: bool = True,
+    env_file: str = ".env",
+) -> dict[str, Any]:
+    """
+    Run analysis on capture artifacts using an LLM.
+    
+    Args:
+        run_dir: Explicit run directory to analyze
+        data_dir: Root data directory
+        site: Site folder name under data/
+        start_utc: Analyze runs with timestamps >= this (ISO 8601 or YYYYMMDD-HHMMSS)
+        end_utc: Analyze runs with timestamps <= this (ISO 8601 or YYYYMMDD-HHMMSS)
+        provider: LLM provider (openai, xai, grok)
+        model: Model for analysis (defaults by provider)
+        endpoint: Responses API endpoint (defaults by provider)
+        api_key: API key directly (overrides env lookup)
+        api_key_env: Environment variable name containing the API key
+        max_dom_chars: Max DOM characters to include
+        custom_prompt: Custom analysis prompt
+        combine_run: Combine all targets into single analysis
+        env_file: Path to .env file
+    
+    Returns:
+        Dictionary with analysis summary and results
+    """
+    load_env_file(Path(env_file))
+    provider = normalize_provider(provider)
+    model = model or default_model_for_provider(provider)
+    endpoint = endpoint or default_endpoint_for_provider(provider)
+    
+    # Get API key
     if not api_key:
-        if provider == "xai":
-            fallbacks = ["XAI_API_KEY", "GROK_API_KEY"]
-            for fallback_key in fallbacks:
-                fallback_value = os.getenv(fallback_key)
-                if fallback_value:
-                    api_key_env = fallback_key
-                    api_key = fallback_value
-                    break
+        api_key_env_name = api_key_env or default_api_key_env_for_provider(provider)
+        api_key = os.getenv(api_key_env_name)
         if not api_key:
-            print(f"ERROR: API key env var is not set: {api_key_env}", file=sys.stderr)
-            return 1
+            if provider == "xai":
+                fallbacks = ["XAI_API_KEY", "GROK_API_KEY"]
+                for fallback_key in fallbacks:
+                    fallback_value = os.getenv(fallback_key)
+                    if fallback_value:
+                        api_key = fallback_value
+                        break
+            if not api_key:
+                raise ValueError(f"API key not found. Set {api_key_env_name} environment variable.")
 
-    try:
-        start_utc = parse_iso_utc(args.start_utc)
-        end_utc = parse_iso_utc(args.end_utc)
-        if args.start_utc and start_utc is None:
-            raise ValueError(f"Invalid --start-utc value: {args.start_utc}")
-        if args.end_utc and end_utc is None:
-            raise ValueError(f"Invalid --end-utc value: {args.end_utc}")
-        if start_utc and end_utc and start_utc > end_utc:
-            raise ValueError("--start-utc must be <= --end-utc")
+    start_dt = parse_iso_utc(start_utc)
+    end_dt = parse_iso_utc(end_utc)
+    if start_utc and start_dt is None:
+        raise ValueError(f"Invalid start_utc value: {start_utc}")
+    if end_utc and end_dt is None:
+        raise ValueError(f"Invalid end_utc value: {end_utc}")
+    if start_dt and end_dt and start_dt > end_dt:
+        raise ValueError("start_utc must be <= end_utc")
 
-        if args.run_dir:
-            run_dirs = [Path(args.run_dir)]
-        elif start_utc or end_utc:
-            run_dirs = find_runs_in_range(Path(args.data_dir), args.site, start_utc, end_utc)
-            if not run_dirs:
-                raise ValueError("No runs found in the requested time range.")
-        else:
-            run_dirs = [find_latest_run(Path(args.data_dir), args.site)]
+    if run_dir:
+        run_dirs = [Path(run_dir)]
+    elif start_dt or end_dt:
+        run_dirs = find_runs_in_range(Path(data_dir), site, start_dt, end_dt)
+        if not run_dirs:
+            raise ValueError("No runs found in the requested time range.")
+    else:
+        run_dirs = [find_latest_run(Path(data_dir), site)]
 
-        all_run_summaries = []
-        for run_dir in run_dirs:
-            if not run_dir.exists():
-                raise ValueError(f"Run directory not found: {run_dir}")
+    all_run_summaries = []
+    skipped_runs = []
+    
+    for run_dir_path in run_dirs:
+        try:
+            if not run_dir_path.exists():
+                print(f"WARNING: Run directory not found, skipping: {run_dir_path}", file=sys.stderr)
+                skipped_runs.append(str(run_dir_path))
+                continue
 
-            combine_run = args.combine_run or not args.per_page
             if combine_run:
                 combined = analyze_run_combined(
-                    run_dir=run_dir,
+                    run_dir=run_dir_path,
                     endpoint=endpoint,
                     api_key=api_key,
-                    model=model,
-                    max_dom_chars=args.max_dom_chars,
-                    custom_prompt=args.prompt,
+                        model=model,
+                    max_dom_chars=max_dom_chars,
+                    custom_prompt=custom_prompt,
                 )
                 run_summary = {
                     "analyzed_at_utc": utc_now_iso(),
-                    "run_dir": str(run_dir),
+                    "run_dir": str(run_dir_path),
                     "provider": provider,
                     "model": model,
                     "endpoint": endpoint,
-                    "api_key_env": api_key_env,
                     "combined": True,
                     "combined_analysis": combined,
                 }
             else:
-                target_dirs = discover_target_dirs(run_dir)
+                target_dirs = discover_target_dirs(run_dir_path)
                 if not target_dirs:
-                    raise ValueError(f"No target capture directories found in: {run_dir}")
+                    print(f"WARNING: No target capture directories found, skipping: {run_dir_path}", file=sys.stderr)
+                    skipped_runs.append(str(run_dir_path))
+                    continue
 
                 results = []
                 for target_dir in target_dirs:
@@ -572,58 +615,99 @@ def main() -> int:
                         endpoint=endpoint,
                         api_key=api_key,
                         model=model,
-                        max_dom_chars=args.max_dom_chars,
-                        custom_prompt=args.prompt,
+                        max_dom_chars=max_dom_chars,
+                        custom_prompt=custom_prompt,
                     )
                     results.append(result)
 
                 run_summary = {
                     "analyzed_at_utc": utc_now_iso(),
-                    "run_dir": str(run_dir),
+                    "run_dir": str(run_dir_path),
                     "provider": provider,
                     "model": model,
                     "endpoint": endpoint,
-                    "api_key_env": api_key_env,
                     "targets_analyzed": len(results),
                     "targets": results,
                 }
 
-            run_analysis_path = run_dir / "analysis_summary.json"
+            run_analysis_path = run_dir_path / "analysis_summary.json"
             run_analysis_path.write_text(json.dumps(run_summary, indent=2), encoding="utf-8")
             all_run_summaries.append(run_summary)
+        
+        except Exception as run_exc:
+            print(f"WARNING: Error analyzing run {run_dir_path}, skipping: {run_exc}", file=sys.stderr)
+            skipped_runs.append(str(run_dir_path))
+            continue
+    
+    # If no runs were successfully analyzed, raise an error
+    if not all_run_summaries:
+        if skipped_runs:
+            raise ValueError(f"Could not analyze any runs. Skipped {len(skipped_runs)} run(s) due to errors.")
+        else:
+            raise ValueError("No runs found to analyze.")
 
-        if len(all_run_summaries) > 1 or start_utc or end_utc:
-            range_root = Path(args.data_dir)
-            if args.site:
-                range_root = range_root / args.site
-            range_summary_path = range_root / "analysis_range_summary.json"
-            range_summary_path.write_text(
-                json.dumps(
-                    {
-                        "analyzed_at_utc": utc_now_iso(),
-                        "provider": provider,
-                        "model": model,
-                        "endpoint": endpoint,
-                        "api_key_env": api_key_env,
-                        "start_utc": start_utc.isoformat() if start_utc else None,
-                        "end_utc": end_utc.isoformat() if end_utc else None,
-                        "runs_analyzed": len(all_run_summaries),
-                        "runs": all_run_summaries,
-                    },
-                    indent=2,
-                ),
-                encoding="utf-8",
-            )
+    if len(all_run_summaries) > 1 or start_dt or end_dt:
+        range_root = Path(data_dir)
+        if site:
+            range_root = range_root / site
+        range_summary_path = range_root / "analysis_range_summary.json"
+        range_summary_path.write_text(
+            json.dumps(
+                {
+                    "analyzed_at_utc": utc_now_iso(),
+                    "provider": provider,
+                    "model": model,
+                    "endpoint": endpoint,
+                    "start_utc": start_dt.isoformat() if start_dt else None,
+                    "end_utc": end_dt.isoformat() if end_dt else None,
+                    "runs_analyzed": len(all_run_summaries),
+                    "runs": all_run_summaries,
+                },
+                indent=2,
+            ),
+            encoding="utf-8",
+        )
+    
+    result = {
+        "runs_analyzed": len(all_run_summaries),
+        "run_summaries": all_run_summaries,
+        "skipped_runs": len(skipped_runs),
+    }
+    
+    if len(run_dirs) == 1:
+        msg = f"Analysis completed: {run_dirs[0]}"
+    else:
+        msg = f"Analysis completed for {len(all_run_summaries)} of {len(run_dirs)} runs."
+    
+    if skipped_runs:
+        msg += f" ({len(skipped_runs)} run(s) skipped due to errors)"
+    
+    result["message"] = msg
+    
+    return result
+
+
+def main() -> int:
+    """CLI entry point for analysis."""
+    args = parse_args()
+    try:
+        result = run_analysis(
+            run_dir=args.run_dir,
+            data_dir=args.data_dir,
+            site=args.site,
+            start_utc=args.start_utc,
+            end_utc=args.end_utc,
+            provider=args.provider,
+            model=args.model,
+            endpoint=args.endpoint,
+            api_key_env=args.api_key_env,
+            max_dom_chars=args.max_dom_chars,
+            custom_prompt=args.prompt,
+            combine_run=args.combine_run or not args.per_page,
+            env_file=args.env_file,
+        )
+        print(result["message"])
+        return 0
     except Exception as exc:  # noqa: BLE001
         print(f"ERROR: {exc}", file=sys.stderr)
         return 1
-
-    if len(run_dirs) == 1:
-        print(f"Analysis completed: {run_dirs[0]}")
-    else:
-        print(f"Analysis completed for {len(run_dirs)} runs.")
-    return 0
-
-
-if __name__ == "__main__":
-    raise SystemExit(main())

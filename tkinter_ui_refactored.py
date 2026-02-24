@@ -240,13 +240,38 @@ class WhistleblowerUIRefactored:
 
         # Advanced Options section (hidden by default)
         self.advanced_frame = ttk.LabelFrame(self.settings_tab, text="Advanced Settings", padding="10")
-        self.advanced_frame.pack(fill=tk.X, pady=10, padx=10)
+        self.advanced_frame.pack(fill=tk.BOTH, expand=True, pady=10, padx=10)
         self.advanced_frame.pack_forget()  # Hide by default
 
+        # Create scrollable container for advanced options
+        canvas_frame = ttk.Frame(self.advanced_frame)
+        canvas_frame.pack(fill=tk.BOTH, expand=True)
+
+        self.advanced_canvas = tk.Canvas(canvas_frame, height=300, highlightthickness=0)
+        advanced_scrollbar = ttk.Scrollbar(canvas_frame, orient="vertical", command=self.advanced_canvas.yview)
+        self.advanced_scrollable_frame = ttk.Frame(self.advanced_canvas)
+
+        self.advanced_scrollable_frame.bind(
+            "<Configure>",
+            lambda e: self.advanced_canvas.configure(scrollregion=self.advanced_canvas.bbox("all"))
+        )
+
+        self.advanced_canvas.create_window((0, 0), window=self.advanced_scrollable_frame, anchor="nw")
+        self.advanced_canvas.configure(yscrollcommand=advanced_scrollbar.set)
+
+        self.advanced_canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        advanced_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+        # Bind mousewheel scrolling
+        def _on_advanced_mousewheel(event):
+            self.advanced_canvas.yview_scroll(int(-1*(event.delta/120)), "units")
+        self.advanced_canvas.bind("<Enter>", lambda e: self.advanced_canvas.bind_all("<MouseWheel>", _on_advanced_mousewheel))
+        self.advanced_canvas.bind("<Leave>", lambda e: self.advanced_canvas.unbind_all("<MouseWheel>"))
+
         # Timeout settings
-        ttk.Label(self.advanced_frame, text="Timeouts (milliseconds):", font=("TkDefaultFont", 10, "bold")).pack(anchor=tk.W, pady=5)
+        ttk.Label(self.advanced_scrollable_frame, text="Timeouts (milliseconds):", font=("TkDefaultFont", 10, "bold")).pack(anchor=tk.W, pady=5)
         
-        timeout_frame = ttk.Frame(self.advanced_frame)
+        timeout_frame = ttk.Frame(self.advanced_scrollable_frame)
         timeout_frame.pack(fill=tk.X, padx=20, pady=5)
         
         self.default_bootstrap_timeout = tk.IntVar(value=30000)
@@ -258,7 +283,7 @@ class WhistleblowerUIRefactored:
         ttk.Spinbox(timeout_frame, from_=1000, to=300000, textvariable=self.default_capture_timeout, width=10).pack(side=tk.LEFT, padx=5)
 
         # Capture settings
-        capture_frame = ttk.Frame(self.advanced_frame)
+        capture_frame = ttk.Frame(self.advanced_scrollable_frame)
         capture_frame.pack(fill=tk.X, padx=20, pady=10)
         
         self.default_record_video = tk.BooleanVar(value=False)
@@ -266,24 +291,24 @@ class WhistleblowerUIRefactored:
                        variable=self.default_record_video).pack(anchor=tk.W)
 
         # Analysis settings
-        analysis_label = ttk.Label(self.advanced_frame, text="Analysis Settings:", font=("TkDefaultFont", 10, "bold"))
+        analysis_label = ttk.Label(self.advanced_scrollable_frame, text="Analysis Settings:", font=("TkDefaultFont", 10, "bold"))
         analysis_label.pack(anchor=tk.W, padx=20, pady=10)
         
         self.default_max_dom = tk.IntVar(value=10000)
-        analysis_frame = ttk.Frame(self.advanced_frame)
+        analysis_frame = ttk.Frame(self.advanced_scrollable_frame)
         analysis_frame.pack(fill=tk.X, padx=20, pady=5)
         
         ttk.Label(analysis_frame, text="Max DOM nodes:").pack(side=tk.LEFT)
         ttk.Spinbox(analysis_frame, from_=100, to=100000, textvariable=self.default_max_dom, width=10).pack(side=tk.LEFT, padx=5)
 
         self.default_combine_run = tk.BooleanVar(value=False)
-        ttk.Checkbutton(self.advanced_frame, text="Combine all runs in analysis", 
+        ttk.Checkbutton(self.advanced_scrollable_frame, text="Combine all runs in analysis", 
                        variable=self.default_combine_run).pack(anchor=tk.W, padx=20)
 
     def _toggle_advanced_options(self) -> None:
         """Toggle advanced options visibility."""
         if self.advanced_options_var.get():
-            self.advanced_frame.pack(fill=tk.X, pady=10, padx=10)
+            self.advanced_frame.pack(fill=tk.BOTH, expand=True, pady=10, padx=10)
         else:
             self.advanced_frame.pack_forget()
 

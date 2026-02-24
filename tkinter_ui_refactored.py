@@ -312,6 +312,26 @@ class WhistleblowerUIRefactored:
         else:
             self.advanced_frame.pack_forget()
 
+    def _toggle_capture_advanced(self) -> None:
+        """Toggle capture advanced options visibility."""
+        if self.capture_advanced_var.get():
+            self.capture_advanced_frame.grid()
+        else:
+            self.capture_advanced_frame.grid_remove()
+
+    def _log_capture(self, message: str) -> None:
+        """Log a message to the capture status text area."""
+        def _append():
+            self.capture_status_text.config(state="normal")
+            self.capture_status_text.insert(tk.END, message + "\n")
+            self.capture_status_text.see(tk.END)
+            self.capture_status_text.config(state="disabled")
+        
+        if threading.current_thread() == threading.main_thread():
+            _append()
+        else:
+            self.root.after(0, _append)
+
     def _update_api_status(self) -> None:
         """Update API key status indicators."""
         openai = self.openai_key_var.get().strip()
@@ -571,9 +591,60 @@ class WhistleblowerUIRefactored:
         
         self.capture_interval_frame.grid_remove()
 
+        # Advanced Options toggle
+        self.capture_advanced_var = tk.BooleanVar(value=False)
+        ttk.Separator(self.capture_tab, orient=tk.HORIZONTAL).grid(row=3, column=0, columnspan=2, sticky="ew", pady=10)
+        
+        advanced_header = ttk.Frame(self.capture_tab)
+        advanced_header.grid(row=4, column=0, columnspan=2, sticky=tk.W, padx=5, pady=5)
+        
+        ttk.Checkbutton(advanced_header, text="Show Advanced Options", 
+                       variable=self.capture_advanced_var, 
+                       command=self._toggle_capture_advanced).pack(side=tk.LEFT)
+
+        # Advanced Options section (hidden by default)
+        self.capture_advanced_frame = ttk.LabelFrame(self.capture_tab, text="Advanced Capture Settings", padding="10")
+        self.capture_advanced_frame.grid(row=5, column=0, columnspan=2, sticky="ew", pady=10, padx=10)
+        self.capture_advanced_frame.grid_remove()  # Hide by default
+
+        # Timeout overrides
+        ttk.Label(self.capture_advanced_frame, text="Timeout Overrides:", font=("TkDefaultFont", 10, "bold")).pack(anchor=tk.W, pady=5)
+        
+        timeout_override_frame = ttk.Frame(self.capture_advanced_frame)
+        timeout_override_frame.pack(fill=tk.X, padx=20, pady=5)
+        
+        self.capture_timeout_override = tk.IntVar(value=30000)
+        ttk.Label(timeout_override_frame, text="Navigation timeout (ms):").pack(side=tk.LEFT)
+        ttk.Spinbox(timeout_override_frame, from_=5000, to=300000, textvariable=self.capture_timeout_override, width=10).pack(side=tk.LEFT, padx=5)
+
+        self.capture_settle_override = tk.IntVar(value=1000)
+        ttk.Label(timeout_override_frame, text="Settle time (ms):").pack(side=tk.LEFT, padx=20)
+        ttk.Spinbox(timeout_override_frame, from_=0, to=30000, textvariable=self.capture_settle_override, width=10).pack(side=tk.LEFT, padx=5)
+
+        post_login_frame = ttk.Frame(self.capture_advanced_frame)
+        post_login_frame.pack(fill=tk.X, padx=20, pady=5)
+        
+        self.capture_post_login_override = tk.IntVar(value=0)
+        ttk.Label(post_login_frame, text="Post-login wait (ms):").pack(side=tk.LEFT)
+        ttk.Spinbox(post_login_frame, from_=0, to=60000, textvariable=self.capture_post_login_override, width=10).pack(side=tk.LEFT, padx=5)
+
+        # Browser options
+        ttk.Label(self.capture_advanced_frame, text="Browser Options:", font=("TkDefaultFont", 10, "bold")).pack(anchor=tk.W, padx=20, pady=10)
+        
+        browser_opts_frame = ttk.Frame(self.capture_advanced_frame)
+        browser_opts_frame.pack(fill=tk.X, padx=20, pady=5)
+        
+        self.capture_headed_var = tk.BooleanVar(value=False)
+        ttk.Checkbutton(browser_opts_frame, text="Headed mode (visible browser)", 
+                       variable=self.capture_headed_var).pack(anchor=tk.W)
+
+        self.capture_record_video_var = tk.BooleanVar(value=False)
+        ttk.Checkbutton(browser_opts_frame, text="Record video", 
+                       variable=self.capture_record_video_var).pack(anchor=tk.W)
+
         # Start/Stop buttons
         button_frame = ttk.Frame(self.capture_tab)
-        button_frame.grid(row=3, column=0, columnspan=2, pady=20)
+        button_frame.grid(row=6, column=0, columnspan=2, pady=20)
         
         self.capture_start_btn = ttk.Button(
             button_frame, text="Start Capture", command=self._start_capture, width=20
@@ -584,6 +655,21 @@ class WhistleblowerUIRefactored:
             button_frame, text="Stop", command=self._stop_capture, width=20, state="disabled"
         )
         self.capture_stop_btn.pack(side=tk.LEFT, padx=10)
+
+        # Capture Status area
+        status_label = ttk.Label(self.capture_tab, text="Capture Status:", font=("TkDefaultFont", 10, "bold"))
+        status_label.grid(row=7, column=0, columnspan=2, sticky=tk.W, padx=5, pady=(10, 5))
+        
+        self.capture_status_text = scrolledtext.ScrolledText(
+            self.capture_tab,
+            wrap=tk.WORD,
+            width=80,
+            height=8,
+            state="disabled",
+            background="#f0f0f0",
+        )
+        self.capture_status_text.grid(row=8, column=0, columnspan=2, sticky="nsew", padx=5, pady=5)
+        self.capture_tab.rowconfigure(8, weight=1)
 
     def _create_analysis_tab(self) -> None:
         """Create simplified Analysis tab."""
@@ -1131,18 +1217,40 @@ Analysis Settings:
             
             if not bootstrap_file.exists():
                 self._log(f"ERROR: Bootstrap file not found: {bootstrap_file}")
+                self._log_capture(f"ERROR: Bootstrap file not found: {bootstrap_file}")
                 messagebox.showerror("Error", f"Bootstrap file not found. Initialize site first.")
                 return
             
+            # Use advanced settings if enabled
+            if self.capture_advanced_var.get():
+                timeout_ms = self.capture_timeout_override.get()
+                settle_ms = self.capture_settle_override.get()
+                post_login_wait_ms = self.capture_post_login_override.get()
+                headed = self.capture_headed_var.get()
+                record_video = self.capture_record_video_var.get()
+                self._log_capture(f"Using advanced settings: timeout={timeout_ms}ms, settle={settle_ms}ms, post_login={post_login_wait_ms}ms")
+            else:
+                timeout_ms = capture_settings["timeout_ms"]
+                settle_ms = capture_settings["settle_ms"]
+                post_login_wait_ms = capture_settings["post_login_wait_ms"]
+                headed = capture_settings["headed"]
+                record_video = capture_settings["record_video"]
+                self._log_capture(f"Using config settings: timeout={timeout_ms}ms, settle={settle_ms}ms")
+            
             self._log(f"Running capture for {site_name}...")
+            self._log_capture(f"=== Starting Capture for {site_name} ===")
+            self._log_capture(f"Config: {bootstrap_file}")
+            self._log_capture(f"Mode: {'Headed' if headed else 'Headless'}, Video: {'ON' if record_video else 'OFF'}")
+            self._log_capture("Launching browser...")
+            
             result = whistleblower.run_capture(
                 config_path=str(bootstrap_file),
                 data_dir=config["directories"]["capture_data"],
-                timeout_ms=capture_settings["timeout_ms"],
-                settle_ms=capture_settings["settle_ms"],
-                post_login_wait_ms=capture_settings["post_login_wait_ms"],
-                headed=capture_settings["headed"],
-                record_video=capture_settings["record_video"],
+                timeout_ms=timeout_ms,
+                settle_ms=settle_ms,
+                post_login_wait_ms=post_login_wait_ms,
+                headed=headed,
+                record_video=record_video,
                 video_width=capture_settings["video_width"],
                 video_height=capture_settings["video_height"],
             )
@@ -1150,9 +1258,13 @@ Analysis Settings:
             self._log(f"✓ Capture complete!")
             self._log(f"Targets captured: {result['targets_captured']}")
             self._log(f"Run directory: {result['run_dir']}")
-            messagebox.showinfo("Success", "Capture completed successfully")
+            self._log_capture(f"✓ Capture completed successfully!")
+            self._log_capture(f"Targets captured: {result['targets_captured']}")
+            self._log_capture(f"Run directory: {result['run_dir']}")
+            messagebox.showinfo("Success", f"Capture completed successfully!\n\nTargets: {result['targets_captured']}\nSaved to: {result['run_dir']}")
         except Exception as exc:
             self._log(f"ERROR: {exc}")
+            self._log_capture(f"✗ ERROR: {exc}")
             messagebox.showerror("Error", f"Capture failed: {exc}")
         finally:
             self.root.after(0, lambda: self.capture_start_btn.config(state="normal"))

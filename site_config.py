@@ -8,27 +8,31 @@ from typing import Any
 
 
 SITES_DIR = Path("sites")
-SETUP_SUFFIX = "_setup.json"
+CONFIG_SUFFIX = ".config.json"
 
 
 def ensure_sites_dir() -> None:
     """Ensure sites directory exists."""
-    SITES_DIR.mkdir(exist_ok=True)
+    SITES_DIR.mkdir(parents=True, exist_ok=True)
 
 
 def get_site_setup_path(site_name: str) -> Path:
     """Get path to site setup config file."""
     ensure_sites_dir()
-    safe_name = site_name.replace(" ", "_").replace("/", "_")
-    return SITES_DIR / f"{safe_name}{SETUP_SUFFIX}"
+    safe_name = site_name.replace(" ", "_").replace("/", "_").lower()
+    return SITES_DIR / f"{safe_name}{CONFIG_SUFFIX}"
 
 
 def list_sites() -> list[str]:
     """List all configured sites."""
     ensure_sites_dir()
     sites = []
-    for file in SITES_DIR.glob(f"*{SETUP_SUFFIX}"):
-        site_name = file.stem.replace(SETUP_SUFFIX.strip("."), "").replace("_", " ")
+    for file in SITES_DIR.glob(f"*{CONFIG_SUFFIX}"):
+        # Extract site name from filename (remove .config.json)
+        # file.name = "tk3_setup.config.json"
+        # Remove the suffix to get "tk3_setup", then convert underscores to spaces to get "tk3 setup"
+        name_without_suffix = file.name.replace(CONFIG_SUFFIX, "")
+        site_name = name_without_suffix.replace("_", " ")
         sites.append(site_name)
     return sorted(sites)
 
@@ -43,6 +47,13 @@ def load_site_config(site_name: str) -> dict[str, Any] | None:
     """Load site configuration from JSON file."""
     path = get_site_setup_path(site_name)
     if not path.exists():
+        print(f"DEBUG: Config file not found at {path}")
+        print(f"DEBUG: Current directory: {Path.cwd()}")
+        print(f"DEBUG: Looking for site config for: {site_name}")
+        # List what files DO exist in sites directory
+        if Path("sites").exists():
+            files = list(Path("sites").glob("*_setup.json"))
+            print(f"DEBUG: Found {len(files)} site config files: {[f.name for f in files]}")
         return None
     return json.loads(path.read_text())
 
@@ -62,7 +73,7 @@ def create_default_config(
     ignore_https_errors: bool = True,
 ) -> dict[str, Any]:
     """Create a default site configuration."""
-    safe_name = site_name.replace(" ", "_").lower()
+    safe_name = site_name.replace(" ", "_").replace("/", "_").lower()
     return {
         "site_name": site_name,
         "bootstrap_url": bootstrap_url,

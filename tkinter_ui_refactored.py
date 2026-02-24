@@ -148,9 +148,15 @@ class WhistleblowerUIRefactored:
                         key, value = line.split("=", 1)
                         stored_keys[key.strip()] = value.strip()
         
-        # Get current keys from environment
+        # Get current keys from environment or file
         openai_key = os.getenv("OPENAI_API_KEY", stored_keys.get("OPENAI_API_KEY", "")).strip()
         xai_key = os.getenv("XAI_API_KEY", stored_keys.get("XAI_API_KEY", "")).strip()
+        
+        # Set in environment if loaded from file (so analysis can use them)
+        if openai_key and not os.getenv("OPENAI_API_KEY"):
+            os.environ["OPENAI_API_KEY"] = openai_key
+        if xai_key and not os.getenv("XAI_API_KEY"):
+            os.environ["XAI_API_KEY"] = xai_key
         
         # OpenAI Key
         openai_frame = ttk.Frame(api_frame)

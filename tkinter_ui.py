@@ -15,6 +15,7 @@ from typing import Any
 
 import bootstrap_recorder
 import whistleblower
+import analyze_capture
 
 
 class WhistleblowerUI:
@@ -28,6 +29,7 @@ class WhistleblowerUI:
         # Thread management
         self.bootstrap_thread: threading.Thread | None = None
         self.capture_thread: threading.Thread | None = None
+        self.analysis_thread: threading.Thread | None = None
         self.log_queue: queue.Queue[str] = queue.Queue()
         
         # Browser type variable
@@ -93,6 +95,11 @@ class WhistleblowerUI:
         self.capture_tab = ttk.Frame(self.notebook, padding="10")
         self.notebook.add(self.capture_tab, text="Capture")
         self._create_capture_tab()
+        
+        # Analysis tab
+        self.analysis_tab = ttk.Frame(self.notebook, padding="10")
+        self.notebook.add(self.analysis_tab, text="Analysis")
+        self._create_analysis_tab()
         
         # Log output frame
         log_frame = ttk.LabelFrame(main_frame, text="Output Log", padding="5")
@@ -442,6 +449,184 @@ class WhistleblowerUI:
         finally:
             # Re-enable button
             self.root.after(0, lambda: self.capture_btn.config(state='normal'))
+    
+    def _create_analysis_tab(self) -> None:
+        """Create the Analysis tab widgets."""
+        # Run directory selection
+        ttk.Label(self.analysis_tab, text="Run Dir:").grid(row=0, column=0, sticky=tk.W, pady=5)
+        self.analysis_run_dir = tk.StringVar(value="")
+        run_frame = ttk.Frame(self.analysis_tab)
+        run_frame.grid(row=0, column=1, sticky="ew", pady=5, padx=5)
+        self.analysis_tab.columnconfigure(1, weight=1)
+        
+        ttk.Entry(run_frame, textvariable=self.analysis_run_dir, width=40).pack(side=tk.LEFT, fill=tk.X, expand=True)
+        ttk.Button(run_frame, text="Browse...", command=self._browse_analysis_run_dir).pack(side=tk.LEFT, padx=(5, 0))
+        ttk.Label(self.analysis_tab, text="Site:").grid(row=1, column=0, sticky=tk.W, pady=5)
+        self.analysis_site = tk.StringVar(value="")
+        ttk.Entry(self.analysis_tab, textvariable=self.analysis_site, width=40).grid(row=1, column=1, sticky="ew", pady=5, padx=5)
+        
+        # Data directory
+        ttk.Label(self.analysis_tab, text="Data Dir:").grid(row=2, column=0, sticky=tk.W, pady=5)
+        self.analysis_data_dir = tk.StringVar(value="data")
+        data_frame = ttk.Frame(self.analysis_tab)
+        data_frame.grid(row=2, column=1, sticky="ew", pady=5, padx=5)
+        ttk.Entry(data_frame, textvariable=self.analysis_data_dir, width=40).pack(side=tk.LEFT, fill=tk.X, expand=True)
+        ttk.Button(data_frame, text="Browse...", command=self._browse_analysis_data_dir).pack(side=tk.LEFT, padx=(5, 0))
+        
+        # Provider selection
+        provider_frame = ttk.LabelFrame(self.analysis_tab, text="LLM Provider", padding="5")
+        provider_frame.grid(row=3, column=0, columnspan=2, sticky="ew", pady=10)
+        
+        self.analysis_provider = tk.StringVar(value="openai")
+        ttk.Radiobutton(
+            provider_frame,
+            text="OpenAI (GPT-4)",
+            variable=self.analysis_provider,
+            value="openai"
+        ).grid(row=0, column=0, sticky=tk.W, padx=5)
+        
+        ttk.Radiobutton(
+            provider_frame,
+            text="xAI (Grok)",
+            variable=self.analysis_provider,
+            value="xai"
+        ).grid(row=0, column=1, sticky=tk.W, padx=5)
+        
+        # API Keys
+        api_frame = ttk.LabelFrame(self.analysis_tab, text="API Keys", padding="5")
+        api_frame.grid(row=4, column=0, columnspan=2, sticky="ew", pady=10)
+        
+        ttk.Label(api_frame, text="OpenAI Key:").grid(row=0, column=0, sticky=tk.W, padx=5)
+        self.analysis_openai_key = tk.StringVar(value="")
+        ttk.Entry(api_frame, textvariable=self.analysis_openai_key, width=40, show="*").grid(row=0, column=1, padx=5, sticky="ew")
+        api_frame.columnconfigure(1, weight=1)
+        
+        ttk.Label(api_frame, text="xAI Key:").grid(row=1, column=0, sticky=tk.W, padx=5)
+        self.analysis_xai_key = tk.StringVar(value="")
+        ttk.Entry(api_frame, textvariable=self.analysis_xai_key, width=40, show="*").grid(row=1, column=1, padx=5, pady=5, sticky="ew")
+        
+        ttk.Label(
+            api_frame,
+            text="(Or set OPENAI_API_KEY / XAI_API_KEY environment variables)",
+            font=("TkDefaultFont", 9, "italic"),
+        ).grid(row=2, column=0, columnspan=2, pady=5)
+        
+        # Options
+        options_frame = ttk.LabelFrame(self.analysis_tab, text="Options", padding="5")
+        options_frame.grid(row=5, column=0, columnspan=2, sticky="ew", pady=10)
+        
+        ttk.Label(options_frame, text="Max DOM chars:").grid(row=0, column=0, sticky=tk.W, padx=5)
+        self.analysis_max_dom = tk.IntVar(value=12000)
+        ttk.Spinbox(options_frame, from_=1000, to=50000, increment=1000, textvariable=self.analysis_max_dom, width=10).grid(
+            row=0, column=1, padx=5
+        )
+        
+        self.analysis_combine = tk.BooleanVar(value=True)
+        ttk.Checkbutton(
+            options_frame,
+            text="Combine run (single analysis)",
+            variable=self.analysis_combine
+        ).grid(row=0, column=2, sticky=tk.W, padx=5)
+        
+        # Start button
+        self.analysis_btn = ttk.Button(
+            self.analysis_tab,
+            text="Start Analysis",
+            command=self._start_analysis
+        )
+        self.analysis_btn.grid(row=6, column=0, columnspan=2, pady=20)
+    
+    def _browse_analysis_run_dir(self) -> None:
+        """Browse for analysis run directory."""
+        directory = filedialog.askdirectory(initialdir=self.analysis_data_dir.get())
+        if directory:
+            self.analysis_run_dir.set(directory)
+    
+    def _browse_analysis_data_dir(self) -> None:
+        """Browse for analysis data directory."""
+        directory = filedialog.askdirectory(initialdir=self.analysis_data_dir.get())
+        if directory:
+            self.analysis_data_dir.set(directory)
+    
+    def _start_analysis(self) -> None:
+        """Start analysis in a thread."""
+        if self.analysis_thread is not None and self.analysis_thread.is_alive():
+            messagebox.showwarning("Warning", "Analysis is already running")
+            return
+        
+        # Get provider and API key
+        provider = self.analysis_provider.get()
+        openai_key = self.analysis_openai_key.get().strip()
+        xai_key = self.analysis_xai_key.get().strip()
+        
+        # Determine API key based on provider
+        import os
+        if provider == "openai":
+            api_key = openai_key or os.getenv("OPENAI_API_KEY")
+            if not api_key:
+                messagebox.showerror("Error", "OpenAI API key required. Enter key or set OPENAI_API_KEY environment variable.")
+                return
+        else:  # xai
+            api_key = xai_key or os.getenv("XAI_API_KEY")
+            if not api_key:
+                messagebox.showerror("Error", "xAI API key required. Enter key or set XAI_API_KEY environment variable.")
+                return
+        
+        # Disable button
+        self.analysis_btn.config(state='disabled')
+        self._log("=== Starting Analysis ===")
+        self._log(f"Provider: {provider}")
+        
+        # Start thread
+        self.analysis_thread = threading.Thread(
+            target=self._run_analysis_thread,
+            args=(
+                self.analysis_run_dir.get() or None,
+                self.analysis_data_dir.get(),
+                self.analysis_site.get() or None,
+                provider,
+                api_key,
+                self.analysis_max_dom.get(),
+                self.analysis_combine.get(),
+            ),
+            daemon=True,
+        )
+        self.analysis_thread.start()
+    
+    def _run_analysis_thread(
+        self,
+        run_dir: str | None,
+        data_dir: str,
+        site: str | None,
+        provider: str,
+        api_key: str,
+        max_dom_chars: int,
+        combine_run: bool,
+    ) -> None:
+        """Run analysis in background thread."""
+        try:
+            self._log("Running LLM analysis on capture artifacts...")
+            result = analyze_capture.run_analysis(
+                run_dir=run_dir,
+                data_dir=data_dir,
+                site=site,
+                provider=provider,
+                api_key=api_key,
+                max_dom_chars=max_dom_chars,
+                combine_run=combine_run,
+            )
+            self._log(f"Analysis complete!")
+            self._log(f"Runs analyzed: {result['runs_analyzed']}")
+            self._log(result['message'])
+            for summary in result.get('run_summaries', []):
+                self._log(f"  - {summary['run_dir']}")
+            messagebox.showinfo("Success", "Analysis completed!")
+        except Exception as exc:
+            self._log(f"ERROR: {exc}")
+            messagebox.showerror("Error", f"Analysis failed: {exc}")
+        finally:
+            # Re-enable button
+            self.root.after(0, lambda: self.analysis_btn.config(state='normal'))
     
     def _show_about(self) -> None:
         """Show about dialog."""

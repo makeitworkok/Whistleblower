@@ -608,24 +608,102 @@ class WhistleblowerUIRefactored:
         self.analysis_advanced_frame.grid(row=3, column=0, columnspan=2, sticky="ew", pady=10)
         self.analysis_advanced_frame.grid_remove()
         
-        ttk.Label(self.analysis_advanced_frame, text="Max DOM chars:").grid(row=0, column=0, sticky=tk.W, padx=5)
+        # Analysis Mode
+        mode_frame = ttk.Frame(self.analysis_advanced_frame)
+        mode_frame.grid(row=0, column=0, columnspan=3, sticky="ew", pady=5)
+        
+        ttk.Label(mode_frame, text="Analysis Mode:").pack(side=tk.LEFT, padx=5)
+        self.analysis_mode_var = tk.StringVar(value="default")
+        ttk.Radiobutton(mode_frame, text="Default Stream", variable=self.analysis_mode_var, 
+                       value="default", command=self._toggle_analysis_mode).pack(side=tk.LEFT, padx=10)
+        ttk.Radiobutton(mode_frame, text="Custom Analysis", variable=self.analysis_mode_var, 
+                       value="custom", command=self._toggle_analysis_mode).pack(side=tk.LEFT, padx=10)
+        
+        # Custom Analysis Options (personalities)
+        self.custom_analysis_frame = ttk.LabelFrame(self.analysis_advanced_frame, text="Custom Analysis Personalities", padding="5")
+        self.custom_analysis_frame.grid(row=1, column=0, columnspan=3, sticky="ew", pady=5)
+        self.custom_analysis_frame.grid_remove()  # Hidden by default
+        
+        # Personalities
+        personalities_frame = ttk.Frame(self.custom_analysis_frame)
+        personalities_frame.pack(fill=tk.X, pady=5)
+        
+        self.personality_boilerbob = tk.BooleanVar(value=False)
+        ttk.Checkbutton(personalities_frame, text="BoilerBob (Mechanical Authority)", 
+                       variable=self.personality_boilerbob).grid(row=0, column=0, sticky=tk.W, padx=5, pady=2)
+        ttk.Label(personalities_frame, text="→ Parses graphical pages for mechanical issues", 
+                 foreground="gray", font=("TkDefaultFont", 9)).grid(row=0, column=1, sticky=tk.W, padx=20)
+        
+        self.personality_casey = tk.BooleanVar(value=False)
+        ttk.Checkbutton(personalities_frame, text="ConservationCasey (Energy Specialist)", 
+                       variable=self.personality_casey).grid(row=1, column=0, sticky=tk.W, padx=5, pady=2)
+        ttk.Label(personalities_frame, text="→ Identifies energy savings opportunities and cost reductions", 
+                 foreground="gray", font=("TkDefaultFont", 9)).grid(row=1, column=1, sticky=tk.W, padx=20)
+        
+        self.personality_dave = tk.BooleanVar(value=False)
+        ttk.Checkbutton(personalities_frame, text="DirectorDave (ROI Strategist)", 
+                       variable=self.personality_dave).grid(row=2, column=0, sticky=tk.W, padx=5, pady=2)
+        ttk.Label(personalities_frame, text="→ Synthesizes data to develop ROI models for improvements", 
+                 foreground="gray", font=("TkDefaultFont", 9)).grid(row=2, column=1, sticky=tk.W, padx=20)
+        
+        self.personality_gary = tk.BooleanVar(value=False)
+        ttk.Checkbutton(personalities_frame, text="GraphicalGary (UI Standards) [Experimental]", 
+                       variable=self.personality_gary).grid(row=3, column=0, sticky=tk.W, padx=5, pady=2)
+        ttk.Label(personalities_frame, text="→ Examines UI consistency against graphical standards", 
+                 foreground="gray", font=("TkDefaultFont", 9)).grid(row=3, column=1, sticky=tk.W, padx=20)
+        
+        # Custom Question
+        question_frame = ttk.LabelFrame(self.custom_analysis_frame, text="Custom Question (Optional)", padding="5")
+        question_frame.pack(fill=tk.BOTH, expand=True, pady=5)
+        
+        ttk.Label(question_frame, text="Ask a specific question about this site:", 
+                 foreground="darkblue").pack(anchor=tk.W, padx=5, pady=2)
+        
+        self.custom_question_text = scrolledtext.ScrolledText(question_frame, wrap=tk.WORD, height=4, width=70)
+        self.custom_question_text.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
+        
+        # Technical options (DOM, combine)
+        tech_frame = ttk.Frame(self.analysis_advanced_frame)
+        tech_frame.grid(row=2, column=0, columnspan=3, sticky="ew", pady=5)
+        
+        ttk.Label(tech_frame, text="Max DOM chars:").pack(side=tk.LEFT, padx=5)
         self.analysis_max_dom = tk.IntVar(value=12000)
-        ttk.Spinbox(
-            self.analysis_advanced_frame, from_=1000, to=50000, increment=1000, textvariable=self.analysis_max_dom, width=10
-        ).grid(row=0, column=1, padx=5)
+        ttk.Spinbox(tech_frame, from_=1000, to=50000, increment=1000, 
+                   textvariable=self.analysis_max_dom, width=10).pack(side=tk.LEFT, padx=5)
         
         self.analysis_combine = tk.BooleanVar(value=True)
-        ttk.Checkbutton(
-            self.analysis_advanced_frame,
-            text="Combine run (single analysis)",
-            variable=self.analysis_combine,
-        ).grid(row=0, column=2, sticky=tk.W, padx=5)
+        ttk.Checkbutton(tech_frame, text="Combine run (single analysis)", 
+                       variable=self.analysis_combine).pack(side=tk.LEFT, padx=20)
 
         # Start button
         self.analysis_btn = ttk.Button(
             self.analysis_tab, text="Start Analysis", command=self._start_analysis, width=20
         )
         self.analysis_btn.grid(row=4, column=0, columnspan=2, pady=20)
+        
+        # Analysis Results Display
+        results_frame = ttk.LabelFrame(self.analysis_tab, text="Analysis Results", padding="5")
+        results_frame.grid(row=5, column=0, columnspan=2, sticky="nsew", pady=10)
+        self.analysis_tab.rowconfigure(5, weight=1)
+        
+        self.analysis_results_text = scrolledtext.ScrolledText(
+            results_frame, 
+            wrap=tk.WORD, 
+            height=20, 
+            width=80,
+            font=("TkDefaultFont", 10),
+            state="disabled"
+        )
+        self.analysis_results_text.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
+        
+        # Add button frame for results actions
+        results_btn_frame = ttk.Frame(results_frame)
+        results_btn_frame.pack(fill=tk.X, padx=5, pady=5)
+        
+        ttk.Button(results_btn_frame, text="Clear Results", 
+                  command=self._clear_analysis_results, width=15).pack(side=tk.LEFT, padx=5)
+        ttk.Button(results_btn_frame, text="Copy to Clipboard", 
+                  command=self._copy_analysis_results, width=15).pack(side=tk.LEFT, padx=5)
 
     def _update_capture_ui(self) -> None:
         """Update capture UI based on selected mode."""
@@ -638,8 +716,34 @@ class WhistleblowerUIRefactored:
         """Toggle advanced analysis options visibility."""
         if self.analysis_advanced_var.get():
             self.analysis_advanced_frame.grid()
+            # Also check if custom mode should be shown
+            self._toggle_analysis_mode()
         else:
             self.analysis_advanced_frame.grid_remove()
+
+    def _toggle_analysis_mode(self) -> None:
+        """Toggle between default and custom analysis mode."""
+        if hasattr(self, 'custom_analysis_frame'):
+            if self.analysis_mode_var.get() == "custom":
+                self.custom_analysis_frame.grid()
+            else:
+                self.custom_analysis_frame.grid_remove()
+    
+    def _clear_analysis_results(self) -> None:
+        """Clear the analysis results display."""
+        self.analysis_results_text.config(state="normal")
+        self.analysis_results_text.delete("1.0", tk.END)
+        self.analysis_results_text.config(state="disabled")
+    
+    def _copy_analysis_results(self) -> None:
+        """Copy analysis results to clipboard."""
+        results = self.analysis_results_text.get("1.0", tk.END).strip()
+        if results:
+            self.root.clipboard_clear()
+            self.root.clipboard_append(results)
+            messagebox.showinfo("Copied", "Analysis results copied to clipboard")
+        else:
+            messagebox.showwarning("No Results", "No analysis results to copy")
 
     def _load_site(self) -> None:
         """Load selected site configuration."""
@@ -1084,6 +1188,41 @@ Analysis Settings:
             )
             return
         
+        # Collect custom analysis settings if in custom mode
+        analysis_mode = self.analysis_mode_var.get() if hasattr(self, 'analysis_mode_var') else "default"
+        custom_settings = None
+        
+        if analysis_mode == "custom":
+            # Collect selected personalities
+            personalities = []
+            if self.personality_boilerbob.get():
+                personalities.append("BoilerBob")
+            if self.personality_casey.get():
+                personalities.append("ConservationCasey")
+            if self.personality_dave.get():
+                personalities.append("DirectorDave")
+            if self.personality_gary.get():
+                personalities.append("GraphicalGary")
+            
+            # Get custom question
+            custom_question = self.custom_question_text.get("1.0", tk.END).strip()
+            
+            if not personalities and not custom_question:
+                messagebox.showwarning(
+                    "Warning", 
+                    "Custom analysis selected but no personalities chosen and no question provided.\n\nPlease select at least one personality or enter a custom question."
+                )
+                return
+            
+            custom_settings = {
+                "personalities": personalities,
+                "custom_question": custom_question
+            }
+            
+            self._log(f"Custom Analysis Mode: {', '.join(personalities) if personalities else 'Question only'}")
+            if custom_question:
+                self._log(f"Custom Question: {custom_question[:100]}...")
+        
         if self.analysis_thread and self.analysis_thread.is_alive():
             messagebox.showwarning("Warning", "Analysis is already running")
             return
@@ -1091,20 +1230,75 @@ Analysis Settings:
         self.analysis_btn.config(state="disabled")
         self._log("=== Starting Analysis ===")
         self._log(f"Site: {site_name}, Provider: {provider}")
+        self._log(f"Mode: {analysis_mode.capitalize()}")
         
         self.analysis_thread = threading.Thread(
             target=self._run_analysis_thread,
-            args=(site_name, config, provider, api_key),
+            args=(site_name, config, provider, api_key, custom_settings),
             daemon=True,
         )
         self.analysis_thread.start()
 
     def _run_analysis_thread(
-        self, site_name: str, config: dict[str, Any], provider: str, api_key: str
+        self, site_name: str, config: dict[str, Any], provider: str, api_key: str, custom_settings
     ) -> None:
         """Run analysis in background thread."""
         try:
             self._log("Running LLM analysis...")
+            
+            # Build custom prompt if custom analysis mode
+            custom_prompt = None
+            if custom_settings:
+                personalities = custom_settings.get("personalities", [])
+                custom_question = custom_settings.get("custom_question", "")
+                
+                prompt_parts = []
+                
+                # Add personality-specific instructions
+                if "BoilerBob" in personalities:
+                    prompt_parts.append(
+                        "As BoilerBob, the ultimate mechanical authority: "
+                        "Parse these graphical pages looking for mechanical issues, "
+                        "equipment status problems, alarm conditions, and system inefficiencies. "
+                        "Focus on pumps, boilers, chillers, valves, and mechanical room equipment."
+                    )
+                
+                if "ConservationCasey" in personalities:
+                    prompt_parts.append(
+                        "As ConservationCasey, the ultimate energy specialist: "
+                        "Identify energy savings opportunities, wasteful operations, "
+                        "inefficient setpoints, unnecessary runtime, and cost reduction potential. "
+                        "Quantify energy waste when possible."
+                    )
+                
+                if "DirectorDave" in personalities:
+                    prompt_parts.append(
+                        "As DirectorDave, the ROI strategist: "
+                        "Synthesize the data to develop ROI models. Identify capital improvement "
+                        "opportunities vs. operational improvements. Calculate payback periods, "
+                        "estimate costs, and prioritize initiatives by financial impact."
+                    )
+                
+                if "GraphicalGary" in personalities:
+                    prompt_parts.append(
+                        "As GraphicalGary, the UI standards expert [EXPERIMENTAL]: "
+                        "Examine the graphical user interface against industry standards. "
+                        "Check for consistency, usability issues, color coding standards, "
+                        "alarm prioritization, and navigation clarity."
+                    )
+                
+                # Add custom question if provided
+                if custom_question:
+                    prompt_parts.append(f"Additionally, answer this specific question: {custom_question}")
+                
+                # Combine all parts
+                if prompt_parts:
+                    if len(prompt_parts) > 1:
+                        custom_prompt = "Provide a comprehensive analysis from these perspectives:\n\n"
+                        custom_prompt += "\n\n".join(f"{i+1}. {part}" for i, part in enumerate(prompt_parts))
+                    else:
+                        custom_prompt = prompt_parts[0]
+            
             result = analyze_capture.run_analysis(
                 site=site_name,
                 data_dir=config["directories"]["analysis_output"],
@@ -1113,17 +1307,65 @@ Analysis Settings:
                 provider=provider,
                 api_key=api_key,
                 max_dom_chars=self.analysis_max_dom.get(),
+                custom_prompt=custom_prompt,
                 combine_run=self.analysis_combine.get(),
             )
             self._log(f"✓ Analysis complete!")
             self._log(f"Runs analyzed: {result['runs_analyzed']}")
             self._log(result["message"])
+            
+            # Extract and display analysis text
+            analysis_text = self._extract_analysis_text(result)
+            if analysis_text:
+                self.root.after(0, lambda: self._display_analysis_results(analysis_text))
+            
             messagebox.showinfo("Success", "Analysis completed successfully")
         except Exception as exc:
             self._log(f"ERROR: {exc}")
             messagebox.showerror("Error", f"Analysis failed: {exc}")
         finally:
             self.root.after(0, lambda: self.analysis_btn.config(state="normal"))
+    
+    def _extract_analysis_text(self, result: dict[str, Any]) -> str:
+        """Extract analysis text from analysis result."""
+        analysis_parts = []
+        
+        for i, run_summary in enumerate(result.get("run_summaries", [])):
+            if len(result.get("run_summaries", [])) > 1:
+                run_dir = run_summary.get("run_dir", f"Run {i+1}")
+                analysis_parts.append(f"{'='*80}\n{'='*80}\n")
+                analysis_parts.append(f"Run: {run_dir}\n")
+                analysis_parts.append(f"{'='*80}\n\n")
+            
+            if run_summary.get("combined"):
+                # Combined analysis
+                combined_text = run_summary.get("combined_analysis", "")
+                if combined_text:
+                    analysis_parts.append(combined_text)
+            else:
+                # Individual target analyses
+                targets = run_summary.get("targets", [])
+                for j, target in enumerate(targets):
+                    if len(targets) > 1:
+                        analysis_parts.append(f"\n{'-'*60}\n")
+                        analysis_parts.append(f"Target {j+1}: {target.get('target_dir', 'Unknown')}\n")
+                        analysis_parts.append(f"{'-'*60}\n\n")
+                    
+                    target_analysis = target.get("analysis", "")
+                    if target_analysis:
+                        analysis_parts.append(target_analysis)
+                    
+                    if j < len(targets) - 1:
+                        analysis_parts.append("\n\n")
+        
+        return "\n".join(analysis_parts) if analysis_parts else "No analysis text available."
+    
+    def _display_analysis_results(self, text: str) -> None:
+        """Display analysis results in the results widget (must be called from main thread)."""
+        self.analysis_results_text.config(state="normal")
+        self.analysis_results_text.delete("1.0", tk.END)
+        self.analysis_results_text.insert("1.0", text)
+        self.analysis_results_text.config(state="disabled")
 
     def _log(self, message: str, replace_last: bool = False) -> None:
         """Add message to log (thread-safe)."""

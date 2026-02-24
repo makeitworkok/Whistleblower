@@ -330,6 +330,7 @@ def run_bootstrap(
     ignore_https_errors: bool = False,
     record_video: bool = False,
     browser_type: str = "chromium",
+    finish_flag_file: str | None = None,
 ) -> dict[str, Any]:
     """
     Run bootstrap recording session.
@@ -345,6 +346,7 @@ def run_bootstrap(
         ignore_https_errors: Ignore HTTPS cert errors
         record_video: Record session video
         browser_type: Browser to use (chromium, firefox, webkit)
+        finish_flag_file: Optional path to file - when created, bootstrap finalizes
     
     Returns:
         Dictionary with summary info: site_name, config_out, steps_out, artifacts_dir, events_recorded
@@ -441,14 +443,28 @@ def run_bootstrap(
         print("Recorder is running in a real browser window.")
         print("1) Perform login and navigation exactly as an operator would.")
         print("2) Do not trigger control changes (read-only workflow only).")
-        print("3) Return here and press Enter to finish and write outputs.")
-        print("Press Enter when finished...", flush=True)
         
-        # Use stdin.readline() instead of input() for piped stdin compatibility
-        try:
-            sys.stdin.readline()
-        except (EOFError, OSError):
-            pass
+        if finish_flag_file:
+            print(f"3) Click 'Stop Bootstrap' in the UI when finished.")
+            print("Waiting for completion signal...", flush=True)
+            
+            # Wait for the flag file to be created (checked every 100ms)
+            import time
+            while not Path(finish_flag_file).exists():
+                time.sleep(0.1)
+            
+            # Clean up flag file
+            Path(finish_flag_file).unlink(missing_ok=True)
+            print("\nBootstrap finalized by user.")
+        else:
+            print("3) Return here and press Enter to finish and write outputs.")
+            print("Press Enter when finished...", flush=True)
+            
+            # Use stdin.readline() instead of input() for piped stdin compatibility
+            try:
+                sys.stdin.readline()
+            except (EOFError, OSError):
+                pass
 
         page.screenshot(path=str(final_screenshot_path), full_page=False)
 

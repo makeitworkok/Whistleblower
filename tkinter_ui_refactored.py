@@ -520,17 +520,29 @@ Analysis Settings:
         self.bootstrap_thread.start()
 
     def _stop_bootstrap(self) -> None:
-        """Stop the bootstrap process."""
-        self.bootstrap_running = False
-        self._log("Bootstrap stopped by user")
+        """Signal bootstrap to finalize and save JSON."""
+        if not self.bootstrap_running:
+            return
+        
+        # Signal bootstrap to finalize by creating the flag file
+        if hasattr(self, 'bootstrap_flag_file') and self.bootstrap_flag_file:
+            Path(self.bootstrap_flag_file).touch()
+            self._log("Finalizing bootstrap... Please wait while JSON is compiled.")
+        
         self.stop_bootstrap_btn.config(state="disabled")
-        self.init_btn.config(state="normal")
 
     def _run_bootstrap_thread(self, site_name: str, config: dict[str, Any]) -> None:
         """Run bootstrap in background thread."""
+        import tempfile
+        
         try:
+            # Create temp file path for finish signaling
+            with tempfile.NamedTemporaryFile(delete=False, suffix=".flag") as f:
+                self.bootstrap_flag_file = f.name
+            
             self._log(f"Initializing {site_name} with URL: {config['bootstrap_url']}")
-            self._log("This may take a few minutes... Use Stop button to cancel.")
+            self._log("Browser window is opening... Please login and browse the site.")
+            self._log("Click 'Stop Bootstrap' when you're finished exploring.")
             
             result = bootstrap_recorder.run_bootstrap(
                 url=config["bootstrap_url"],
@@ -541,6 +553,7 @@ Analysis Settings:
                 ignore_https_errors=config["ignore_https_errors"],
                 record_video=False,
                 browser_type=self.browser_var.get(),
+                finish_flag_file=self.bootstrap_flag_file,
             )
             
             # Check if user stopped it
@@ -549,14 +562,18 @@ Analysis Settings:
                 return
             
             self._log(f"✓ Site initialized successfully!")
-            self._log(f"Configuration: {result['config_out']}")
-            self._log(f"Steps: {result['steps_out']}")
-            self.root.after(0, lambda: messagebox.showinfo("Success", f"Site '{site_name}' initialized. Ready to capture."))
+            self._log(f"Configuration saved: {result['config_out']}")
+            self._log(f"Steps saved: {result['steps_out']}")
+            self.root.after(0, lambda: messagebox.showinfo("Success", f"Site '{site_name}' initialized and configured.\n\nYou can now use Capture to take snapshots of the site."))
         except Exception as exc:
             self._log(f"ERROR: {exc}")
             self.root.after(0, lambda: messagebox.showerror("Error", f"Bootstrap failed: {exc}"))
         finally:
             self.bootstrap_running = False
+            # Clean up flag file
+            if hasattr(self, 'bootstrap_flag_file') and self.bootstrap_flag_file:
+                Path(self.bootstrap_flag_file).unlink(missing_ok=True)
+            
             self.root.after(0, lambda: (
                 self.stop_bootstrap_btn.config(state="disabled"),
                 self.init_btn.config(state="normal"),

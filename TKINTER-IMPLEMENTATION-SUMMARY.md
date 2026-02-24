@@ -9,6 +9,7 @@ Successfully migrated Whistleblower from Flask web UI to Tkinter desktop UI to s
 ## Problem Statement
 
 The Flask-based UI used `subprocess.Popen()` to call bootstrap_recorder.py and whistleblower.py. When bundled with PyInstaller, these subprocess calls failed because:
+
 1. Python scripts don't exist as separate files in the bundle
 2. The subprocess environment doesn't have access to bundled dependencies
 3. Path resolution breaks in the temporary extraction folder
@@ -20,6 +21,7 @@ Refactored the architecture to use direct function imports with threading instea
 ## Files Created
 
 ### 1. `tkinter_ui.py` (New)
+
 - Complete Tkinter desktop UI with tabs for Bootstrap and Capture
 - Browser selection dropdown (Chromium/Edge, Firefox, WebKit)
 - Threading integration for non-blocking operations
@@ -28,6 +30,7 @@ Refactored the architecture to use direct function imports with threading instea
 - ~490 lines of clean, well-documented code
 
 ### 2. `whistleblower.spec` (New)
+
 - PyInstaller specification file
 - Configured for GUI app (no console window)
 - Includes data files (sites/*.json)
@@ -35,6 +38,7 @@ Refactored the architecture to use direct function imports with threading instea
 - Excludes unnecessary packages (numpy, matplotlib, Qt, etc.)
 
 ### 3. `TKINTER-BUILD-GUIDE.md` (New)
+
 - Complete build and distribution guide
 - Architecture diagrams showing before/after
 - PyInstaller build instructions
@@ -42,6 +46,7 @@ Refactored the architecture to use direct function imports with threading instea
 - Troubleshooting section
 
 ### 4. `test_refactoring.py` (New)
+
 - Automated tests to verify refactoring
 - Tests module imports, function signatures, CLI compatibility
 - All 5 tests passing ✓
@@ -49,13 +54,16 @@ Refactored the architecture to use direct function imports with threading instea
 ## Files Modified
 
 ### 1. `bootstrap_recorder.py`
+
 **Changes:**
+
 - Added `run_bootstrap()` function - accepts parameters directly (no argparse)
 - Refactored `main()` to call `run_bootstrap()` for CLI compatibility
 - Added `browser_type` parameter for browser selection
 - Returns dictionary with summary info instead of exit code
 
 **Key Function:**
+
 ```python
 def run_bootstrap(
     url: str,
@@ -70,12 +78,15 @@ def run_bootstrap(
 ```
 
 ### 2. `whistleblower.py`
+
 **Changes:**
+
 - Added `run_capture()` function - accepts parameters directly
 - Refactored `main()` to call `run_capture()` for CLI compatibility
 - Returns dictionary with run info instead of just printing
 
 **Key Function:**
+
 ```python
 def run_capture(
     config_path: str | Path,
@@ -91,13 +102,16 @@ def run_capture(
 ```
 
 ### 3. `requirements.txt`
+
 **Changes:**
+
 - Added `pyinstaller>=6.0.0` for building executables
 
 ## Architecture Comparison
 
 ### Before (Flask + Subprocess)
-```
+
+```text
 Flask Web Server (localhost:8787)
   └─> HTTP Request (/bootstrap)
        └─> subprocess.Popen(["python", "bootstrap_recorder.py", ...])
@@ -105,12 +119,14 @@ Flask Web Server (localhost:8787)
 ```
 
 **Problems:**
+
 - Subprocess can't find Python scripts in bundle
 - Environment variables not propagated correctly
 - Browser opens but doesn't navigate
 
 ### After (Tkinter + Threading)
-```
+
+```text
 Tkinter Desktop Window
   └─> Button Click Event
        └─> threading.Thread(target=bootstrap_recorder.run_bootstrap, args=(...))
@@ -118,6 +134,7 @@ Tkinter Desktop Window
 ```
 
 **Benefits:**
+
 - No subprocess needed - direct function call
 - All code runs in same process with shared dependencies
 - Threading keeps UI responsive
@@ -126,6 +143,7 @@ Tkinter Desktop Window
 ## Browser Support
 
 The UI supports three browser types via dropdown:
+
 1. **Chromium** (default) - Auto-detects Edge on Windows
 2. **Firefox** - Uses Playwright's Firefox
 3. **WebKit** - Safari engine (testing/development)
@@ -135,7 +153,8 @@ On Windows, the app tries Edge first (pre-installed on Windows 10/11), then fall
 ## Testing Results
 
 All refactoring tests pass:
-```
+
+```text
 ✓ Successfully imported bootstrap_recorder and whistleblower
 ✓ bootstrap_recorder.run_bootstrap() exists and is callable
 ✓ whistleblower.run_capture() exists and is callable
@@ -149,6 +168,7 @@ Results: 5/5 tests passed
 ## Backward Compatibility
 
 The CLI interface remains fully functional:
+
 ```bash
 # Bootstrap still works
 python bootstrap_recorder.py --url https://example.com --site-name my_site
@@ -162,17 +182,20 @@ python whistleblower.py --config sites/my_site.json
 To complete the implementation:
 
 1. **Build on Windows:**
+
    ```bash
    pyinstaller whistleblower.spec
    ```
 
 2. **Install Playwright browsers:**
+
    ```bash
    cd dist/Whistleblower
    playwright install chromium
    ```
 
 3. **Test on clean Windows machine:**
+
    - No Python installed
    - Fresh Windows 10/11 installation
    - Test bootstrap recording
@@ -201,6 +224,7 @@ To complete the implementation:
 ## File Size Impact
 
 Estimated executable size: ~100-150MB (with Playwright included)
+
 - Can be reduced by excluding unused browsers
 - Or provide browser download script for end users
 

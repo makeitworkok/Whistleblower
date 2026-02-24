@@ -5,6 +5,7 @@ This guide covers the Tkinter desktop UI version of Whistleblower, designed for 
 ## Overview
 
 The Tkinter UI (`tkinter_ui.py`) provides a native desktop interface that:
+
 - Eliminates the need for subprocess calls (direct function imports)
 - Works better with PyInstaller for creating executables
 - Supports browser selection (Chromium/Edge, Firefox, WebKit)
@@ -14,6 +15,7 @@ The Tkinter UI (`tkinter_ui.py`) provides a native desktop interface that:
 ## Running the Tkinter UI
 
 ### Prerequisites
+
 ```bash
 # Install Python dependencies
 pip install -r requirements.txt
@@ -23,6 +25,7 @@ playwright install
 ```
 
 ### Launch the UI
+
 ```bash
 python tkinter_ui.py
 ```
@@ -30,20 +33,24 @@ python tkinter_ui.py
 ## Building Windows Executable
 
 ### 1. Install PyInstaller
+
 ```bash
 pip install pyinstaller
 ```
 
 ### 2. Build the Executable
+
 ```bash
 pyinstaller whistleblower.spec
 ```
 
 This creates:
+
 - `dist/Whistleblower/` folder with the executable and dependencies
 - `dist/Whistleblower/Whistleblower.exe` - the main executable
 
 ### 3. Install Playwright Browsers in Distribution
+
 After building, install Playwright browsers for the bundled distribution:
 
 ```bash
@@ -55,6 +62,7 @@ playwright install firefox
 ```
 
 Or for end users, provide a batch file (`install_browsers.bat`):
+
 ```batch
 @echo off
 echo Installing browsers for Whistleblower...
@@ -68,7 +76,8 @@ pause
 ## Architecture Changes
 
 ### Before (Flask UI + Subprocess)
-```
+
+```text
 Flask Web Server
   └─> HTTP Endpoint
        └─> subprocess.Popen (python bootstrap_recorder.py)
@@ -78,7 +87,8 @@ Flask Web Server
 **Problem**: PyInstaller bundles break subprocess calls to Python scripts.
 
 ### After (Tkinter UI + Direct Import)
-```
+
+```text
 Tkinter Desktop UI
   └─> threading.Thread
        └─> Direct function call (bootstrap_recorder.run_bootstrap())
@@ -90,16 +100,19 @@ Tkinter Desktop UI
 ## Key Refactoring
 
 ### bootstrap_recorder.py
+
 - Added `run_bootstrap()` function - accepts parameters directly
 - Kept `main()` for CLI compatibility
 - No subprocess needed
 
 ### whistleblower.py
+
 - Added `run_capture()` function - accepts parameters directly  
 - Kept `main()` for CLI compatibility
 - No subprocess needed
 
 ### tkinter_ui.py
+
 - New desktop UI using Tkinter
 - Imports modules directly: `import bootstrap_recorder, whistleblower`
 - Runs operations in threads to keep UI responsive
@@ -108,6 +121,7 @@ Tkinter Desktop UI
 ## Browser Support
 
 The UI supports selecting between:
+
 - **Chromium** (default) - includes Edge on Windows (usually pre-installed)
 - **Firefox** - requires Firefox installation
 - **WebKit** - Safari engine (primarily for testing)
@@ -130,24 +144,29 @@ When distributing to Windows users:
 ## Troubleshooting
 
 ### "ModuleNotFoundError" when running executable
+
 - Playwright or dependencies not bundled correctly
 - Solution: Add missing modules to `hiddenimports` in `.spec` file
 
 ### "Browser not found" error
+
 - Playwright browsers not installed for the distribution
 - Solution: Run `playwright install chromium` in dist folder
 
 ### Executable opens console window
+
 - `console=True` in `.spec` file
 - Solution: Change to `console=False` for GUI-only app
 
 ### Slow startup time
+
 - Large bundle size due to excluded packages not being excluded
 - Solution: Review `excludes` list in `.spec` file
 
 ## File Size Optimization
 
 The spec file excludes unnecessary packages:
+
 - matplotlib
 - numpy/pandas
 - PyQt/PySide

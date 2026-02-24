@@ -574,58 +574,77 @@ def run_analysis(
         run_dirs = [find_latest_run(Path(data_dir), site)]
 
     all_run_summaries = []
+    skipped_runs = []
+    
     for run_dir_path in run_dirs:
-        if not run_dir_path.exists():
-            raise ValueError(f"Run directory not found: {run_dir_path}")
+        try:
+            if not run_dir_path.exists():
+                print(f"WARNING: Run directory not found, skipping: {run_dir_path}", file=sys.stderr)
+                skipped_runs.append(str(run_dir_path))
+                continue
 
-        if combine_run:
-            combined = analyze_run_combined(
-                run_dir=run_dir_path,
-                endpoint=endpoint,
-                api_key=api_key,
-                    model=model,
-                max_dom_chars=max_dom_chars,
-                custom_prompt=custom_prompt,
-            )
-            run_summary = {
-                "analyzed_at_utc": utc_now_iso(),
-                "run_dir": str(run_dir_path),
-                "provider": provider,
-                "model": model,
-                "endpoint": endpoint,
-                "combined": True,
-                "combined_analysis": combined,
-            }
-        else:
-            target_dirs = discover_target_dirs(run_dir_path)
-            if not target_dirs:
-                raise ValueError(f"No target capture directories found in: {run_dir_path}")
-
-            results = []
-            for target_dir in target_dirs:
-                result = analyze_target(
-                    target_dir=target_dir,
+            if combine_run:
+                combined = analyze_run_combined(
+                    run_dir=run_dir_path,
                     endpoint=endpoint,
                     api_key=api_key,
-                    model=model,
+                        model=model,
                     max_dom_chars=max_dom_chars,
                     custom_prompt=custom_prompt,
                 )
-                results.append(result)
+                run_summary = {
+                    "analyzed_at_utc": utc_now_iso(),
+                    "run_dir": str(run_dir_path),
+                    "provider": provider,
+                    "model": model,
+                    "endpoint": endpoint,
+                    "combined": True,
+                    "combined_analysis": combined,
+                }
+            else:
+                target_dirs = discover_target_dirs(run_dir_path)
+                if not target_dirs:
+                    print(f"WARNING: No target capture directories found, skipping: {run_dir_path}", file=sys.stderr)
+                    skipped_runs.append(str(run_dir_path))
+                    continue
 
-            run_summary = {
-                "analyzed_at_utc": utc_now_iso(),
-                "run_dir": str(run_dir_path),
-                "provider": provider,
-                "model": model,
-                "endpoint": endpoint,
-                "targets_analyzed": len(results),
-                "targets": results,
-            }
+                results = []
+                for target_dir in target_dirs:
+                    result = analyze_target(
+                        target_dir=target_dir,
+                        endpoint=endpoint,
+                        api_key=api_key,
+                        model=model,
+                        max_dom_chars=max_dom_chars,
+                        custom_prompt=custom_prompt,
+                    )
+                    results.append(result)
 
-        run_analysis_path = run_dir_path / "analysis_summary.json"
-        run_analysis_path.write_text(json.dumps(run_summary, indent=2), encoding="utf-8")
-        all_run_summaries.append(run_summary)
+                run_summary = {
+                    "analyzed_at_utc": utc_now_iso(),
+                    "run_dir": str(run_dir_path),
+                    "provider": provider,
+                    "model": model,
+                    "endpoint": endpoint,
+                    "targets_analyzed": len(results),
+                    "targets": results,
+                }
+
+            run_analysis_path = run_dir_path / "analysis_summary.json"
+            run_analysis_path.write_text(json.dumps(run_summary, indent=2), encoding="utf-8")
+            all_run_summaries.append(run_summary)
+        
+        except Exception as run_exc:
+            print(f"WARNING: Error analyzing run {run_dir_path}, skipping: {run_exc}", file=sys.stderr)
+            skipped_runs.append(str(run_dir_path))
+            continue
+    
+    # If no runs were successfully analyzed, raise an error
+    if not all_run_summaries:
+        if skipped_runs:
+            raise ValueError(f"Could not analyze any runs. Skipped {len(skipped_runs)} run(s) due to errors.")
+        else:
+            raise ValueError("No runs found to analyze.")
 
     if len(all_run_summaries) > 1 or start_dt or end_dt:
         range_root = Path(data_dir)
@@ -652,12 +671,18 @@ def run_analysis(
     result = {
         "runs_analyzed": len(all_run_summaries),
         "run_summaries": all_run_summaries,
+        "skipped_runs": len(skipped_runs),
     }
     
     if len(run_dirs) == 1:
-        result["message"] = f"Analysis completed: {run_dirs[0]}"
+        msg = f"Analysis completed: {run_dirs[0]}"
     else:
-        result["message"] = f"Analysis completed for {len(run_dirs)} runs."
+        msg = f"Analysis completed for {len(all_run_summaries)} of {len(run_dirs)} runs."
+    
+    if skipped_runs:
+        msg += f" ({len(skipped_runs)} run(s) skipped due to errors)"
+    
+    result["message"] = msg
     
     return result
 

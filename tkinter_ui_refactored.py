@@ -186,13 +186,14 @@ class WhistleblowerUIRefactored:
         # Site selection
         ttk.Label(self.capture_tab, text="Site:").grid(row=0, column=0, sticky=tk.W, pady=5)
         self.capture_site_var = tk.StringVar(value="")
-        ttk.Combobox(
+        self.capture_site_dropdown = ttk.Combobox(
             self.capture_tab,
             textvariable=self.capture_site_var,
             values=list_sites(),
             width=40,
             state="readonly",
-        ).grid(row=0, column=1, sticky="ew", pady=5, padx=5)
+        )
+        self.capture_site_dropdown.grid(row=0, column=1, sticky="ew", pady=5, padx=5)
         self.capture_tab.columnconfigure(1, weight=1)
 
         # Capture mode selection
@@ -249,13 +250,14 @@ class WhistleblowerUIRefactored:
         # Site selection
         ttk.Label(self.analysis_tab, text="Site:").grid(row=0, column=0, sticky=tk.W, pady=5)
         self.analysis_site_var = tk.StringVar(value="")
-        ttk.Combobox(
+        self.analysis_site_dropdown = ttk.Combobox(
             self.analysis_tab,
             textvariable=self.analysis_site_var,
             values=list_sites(),
             width=40,
             state="readonly",
-        ).grid(row=0, column=1, sticky="ew", pady=5, padx=5)
+        )
+        self.analysis_site_dropdown.grid(row=0, column=1, sticky="ew", pady=5, padx=5)
         self.analysis_tab.columnconfigure(1, weight=1)
 
         # Date range (optional)
@@ -340,6 +342,13 @@ class WhistleblowerUIRefactored:
             self.capture_site_var.set(site_name)
             self.analysis_site_var.set(site_name)
             self._show_initialize_button()
+
+    def _refresh_site_dropdowns(self) -> None:
+        """Refresh all site dropdown lists."""
+        sites = list_sites()
+        self.site_dropdown["values"] = sites
+        self.capture_site_dropdown["values"] = sites
+        self.analysis_site_dropdown["values"] = sites
 
     def _show_initialize_button(self) -> None:
         """Show Initialize Site button if site is loaded."""
@@ -456,11 +465,13 @@ Analysis Settings:
             save_site_config(site_name, config)
             self._log(f"✓ Site '{site_name}' created successfully")
             
-            # Refresh dropdown
-            self.site_dropdown["values"] = list_sites()
+            # Refresh all dropdown lists
+            self._refresh_site_dropdowns()
+            
+            # Set the new site as selected in all tabs
+            self.site_var.set(site_name)
             self.capture_site_var.set(site_name)
             self.analysis_site_var.set(site_name)
-            self.site_var.set(site_name)
             self._load_site()
             
             wizard_window.destroy()
@@ -488,8 +499,12 @@ Analysis Settings:
             delete_site_config(site_name)
             self._log(f"✓ Site '{site_name}' deleted")
             
-            self.site_dropdown["values"] = list_sites()
+            # Refresh all dropdowns
+            self._refresh_site_dropdowns()
+            
             self.site_var.set("")
+            self.capture_site_var.set("")
+            self.analysis_site_var.set("")
             self.current_site = None
             self.current_config = None
             self.site_details_text.config(state="normal")

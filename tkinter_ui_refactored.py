@@ -159,7 +159,6 @@ class WhistleblowerUIRefactored:
         
         self.openai_status_label = ttk.Label(openai_frame, text="")
         self.openai_status_label.pack(side=tk.LEFT, padx=5)
-        self._update_api_status()
         
         # xAI Key
         xai_frame = ttk.Frame(api_frame)
@@ -172,6 +171,9 @@ class WhistleblowerUIRefactored:
         
         self.xai_status_label = ttk.Label(xai_frame, text="")
         self.xai_status_label.pack(side=tk.LEFT, padx=5)
+        
+        # Update status after both vars are created
+        self._update_api_status()
         
         # Save button
         button_frame = ttk.Frame(api_frame)

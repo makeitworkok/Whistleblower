@@ -561,10 +561,18 @@ Analysis Settings:
             self._log("Browser window is opening... Please login and browse the site.")
             self._log("Click 'Stop Bootstrap' when you're finished exploring.")
             
+            # Prepare output paths for bootstrap artifacts
+            bootstrap_dir = Path(config["directories"]["bootstrap_artifacts"])
+            bootstrap_dir.mkdir(parents=True, exist_ok=True)
+            config_out = str(bootstrap_dir / f"{site_name}.bootstrap.json")
+            steps_out = str(bootstrap_dir / f"{site_name}.steps.json")
+            
             result = bootstrap_recorder.run_bootstrap(
                 url=config["bootstrap_url"],
                 site_name=site_name,
                 output_dir=config["directories"]["bootstrap_artifacts"],
+                config_out=config_out,
+                steps_out=steps_out,
                 viewport_width=config["viewport"]["width"],
                 viewport_height=config["viewport"]["height"],
                 ignore_https_errors=config["ignore_https_errors"],

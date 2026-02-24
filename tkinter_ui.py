@@ -101,9 +101,33 @@ class WhistleblowerUI:
         self.notebook.add(self.schedule_tab, text="Schedule")
         self._create_schedule_tab()
         
-        # Analysis tab
-        self.analysis_tab = ttk.Frame(self.notebook, padding="10")
-        self.notebook.add(self.analysis_tab, text="Analysis")
+        # Analysis tab with scrollbar
+        analysis_container = ttk.Frame(self.notebook)
+        self.notebook.add(analysis_container, text="Analysis")
+        
+        # Create canvas and scrollbar for analysis tab
+        analysis_canvas = tk.Canvas(analysis_container, bg="white", highlightthickness=0)
+        analysis_scrollbar = ttk.Scrollbar(analysis_container, orient="vertical", command=analysis_canvas.yview)
+        self.analysis_tab = ttk.Frame(analysis_canvas, padding="10")
+        
+        self.analysis_tab.bind(
+            "<Configure>",
+            lambda e: analysis_canvas.configure(scrollregion=analysis_canvas.bbox("all"))
+        )
+        
+        analysis_canvas.create_window((0, 0), window=self.analysis_tab, anchor="nw")
+        analysis_canvas.configure(yscrollcommand=analysis_scrollbar.set)
+        
+        # Pack canvas and scrollbar
+        analysis_canvas.pack(side="left", fill="both", expand=True)
+        analysis_scrollbar.pack(side="right", fill="y")
+        
+        # Bind mousewheel for scrolling
+        def _on_mousewheel(event):
+            analysis_canvas.yview_scroll(int(-1*(event.delta/120)), "units")
+        
+        analysis_canvas.bind_all("<MouseWheel>", _on_mousewheel)
+        
         self._create_analysis_tab()
         
         # Log output frame

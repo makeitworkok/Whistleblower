@@ -603,9 +603,12 @@ Analysis Settings:
             messagebox.showerror("Error", "Please select a site")
             return
         
+        self._log(f"DEBUG: Loading config for site: '{site_name}'")
         config = load_site_config(site_name)
         if not config:
-            messagebox.showerror("Error", f"Could not load config for '{site_name}'")
+            self._log(f"ERROR: Could not find config for '{site_name}'")
+            self._log(f"Available sites: {list_sites()}")
+            messagebox.showerror("Error", f"Could not load config for '{site_name}'\n\nPlease check the Setup tab and create the site configuration first.")
             return
         
         if self.capture_mode_var.get() == "now":

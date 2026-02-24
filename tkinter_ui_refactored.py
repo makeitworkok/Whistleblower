@@ -8,6 +8,7 @@ import os
 import queue
 import threading
 import tkinter as tk
+from datetime import datetime, timedelta
 from pathlib import Path
 from tkinter import filedialog, messagebox, scrolledtext, ttk
 from typing import Any
@@ -591,6 +592,19 @@ class WhistleblowerUIRefactored:
         ttk.Entry(date_frame, textvariable=self.analysis_end_utc, width=25).grid(
             row=0, column=3, padx=5, sticky="ew"
         )
+        
+        # Quick date range selection buttons
+        quick_frame = ttk.Frame(date_frame)
+        quick_frame.grid(row=1, column=0, columnspan=4, pady=5, sticky=tk.W)
+        ttk.Label(quick_frame, text="Quick Select:").pack(side=tk.LEFT, padx=5)
+        ttk.Button(quick_frame, text="Last 24 Hours", command=lambda: self._set_date_range(24),
+                  width=12).pack(side=tk.LEFT, padx=2)
+        ttk.Button(quick_frame, text="Last 7 Days", command=lambda: self._set_date_range(24*7),
+                  width=12).pack(side=tk.LEFT, padx=2)
+        ttk.Button(quick_frame, text="Last 30 Days", command=lambda: self._set_date_range(24*30),
+                  width=12).pack(side=tk.LEFT, padx=2)
+        ttk.Button(quick_frame, text="Clear (All Time)", command=self._clear_date_range,
+                  width=15).pack(side=tk.LEFT, padx=2)
 
         # Advanced options toggle
         self.analysis_advanced_var = tk.BooleanVar(value=False)
@@ -744,6 +758,32 @@ class WhistleblowerUIRefactored:
             messagebox.showinfo("Copied", "Analysis results copied to clipboard")
         else:
             messagebox.showwarning("No Results", "No analysis results to copy")
+    
+    def _set_date_range(self, hours: int) -> None:
+        """Set date range to last N hours from now.
+        
+        Args:
+            hours: Number of hours to look back from now
+        """
+        now = datetime.utcnow()
+        start = now - timedelta(hours=hours)
+        
+        # Format as YYYY-MM-DD HH:MM
+        self.analysis_start_utc.set(start.strftime("%Y-%m-%d %H:%M"))
+        self.analysis_end_utc.set(now.strftime("%Y-%m-%d %H:%M"))
+        
+        # Log the selection
+        if hours < 48:
+            label = f"Last {hours} Hours"
+        else:
+            label = f"Last {hours//24} Days"
+        self._log(f"Date range set: {label}")
+    
+    def _clear_date_range(self) -> None:
+        """Clear the date range filters to analyze all available data."""
+        self.analysis_start_utc.set("")
+        self.analysis_end_utc.set("")
+        self._log("Date range cleared - will analyze all runs")
 
     def _load_site(self) -> None:
         """Load selected site configuration."""

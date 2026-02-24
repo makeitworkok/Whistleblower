@@ -1561,10 +1561,21 @@ Analysis Settings:
                 analysis_parts.append(f"{'='*80}\n\n")
             
             if run_summary.get("combined"):
-                # Combined analysis
-                combined_text = run_summary.get("combined_analysis", "")
-                if combined_text:
-                    analysis_parts.append(combined_text)
+                # Combined analysis - read from markdown file
+                combined_info = run_summary.get("combined_analysis", {})
+                if isinstance(combined_info, dict):
+                    md_path = combined_info.get("analysis_md", "")
+                    if md_path and Path(md_path).exists():
+                        try:
+                            combined_text = Path(md_path).read_text(encoding="utf-8")
+                            analysis_parts.append(combined_text)
+                        except Exception as read_exc:
+                            analysis_parts.append(f"Error reading analysis file {md_path}: {read_exc}")
+                    else:
+                        analysis_parts.append("(Combined analysis file not found)")
+                elif isinstance(combined_info, str):
+                    # Fallback: if it's already a string
+                    analysis_parts.append(combined_info)
             else:
                 # Individual target analyses
                 targets = run_summary.get("targets", [])
@@ -1574,9 +1585,16 @@ Analysis Settings:
                         analysis_parts.append(f"Target {j+1}: {target.get('target_dir', 'Unknown')}\n")
                         analysis_parts.append(f"{'-'*60}\n\n")
                     
-                    target_analysis = target.get("analysis", "")
-                    if target_analysis:
-                        analysis_parts.append(target_analysis)
+                    # Read analysis from markdown file
+                    md_path = target.get("analysis_md", "")
+                    if md_path and Path(md_path).exists():
+                        try:
+                            target_analysis = Path(md_path).read_text(encoding="utf-8")
+                            analysis_parts.append(target_analysis)
+                        except Exception as read_exc:
+                            analysis_parts.append(f"Error reading analysis file {md_path}: {read_exc}")
+                    else:
+                        analysis_parts.append("(Target analysis file not found)")
                     
                     if j < len(targets) - 1:
                         analysis_parts.append("\n\n")

@@ -534,11 +534,13 @@ Analysis Settings:
     def _run_bootstrap_thread(self, site_name: str, config: dict[str, Any]) -> None:
         """Run bootstrap in background thread."""
         import tempfile
+        import uuid
         
         try:
-            # Create temp file path for finish signaling
-            with tempfile.NamedTemporaryFile(delete=False, suffix=".flag") as f:
-                self.bootstrap_flag_file = f.name
+            # Create temp file PATH (but don't create the file yet)
+            temp_dir = Path(tempfile.gettempdir())
+            flag_filename = f"whistleblower_bootstrap_{uuid.uuid4().hex}.flag"
+            self.bootstrap_flag_file = str(temp_dir / flag_filename)
             
             self._log(f"Initializing {site_name} with URL: {config['bootstrap_url']}")
             self._log("Browser window is opening... Please login and browse the site.")

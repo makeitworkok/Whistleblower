@@ -1339,27 +1339,67 @@ Analysis Settings:
                     else:
                         custom_prompt = prompt_parts[0]
             
-            result = analyze_capture.run_analysis(
-                site=site_name,
-                data_dir=config["directories"]["analysis_output"],
-                start_utc=self.analysis_start_utc.get().strip() or None,
-                end_utc=self.analysis_end_utc.get().strip() or None,
-                provider=provider,
-                api_key=api_key,
-                max_dom_chars=self.analysis_max_dom.get(),
-                custom_prompt=custom_prompt,
-                combine_run=self.analysis_combine.get(),
-            )
-            self._log(f"✓ Analysis complete!")
-            self._log(f"Runs analyzed: {result['runs_analyzed']}")
-            self._log(result["message"])
+            start_utc_input = self.analysis_start_utc.get().strip() or None
+            end_utc_input = self.analysis_end_utc.get().strip() or None
             
-            # Extract and display analysis text
-            analysis_text = self._extract_analysis_text(result)
-            if analysis_text:
-                self.root.after(0, lambda: self._display_analysis_results(analysis_text))
+            # Try analysis with date range first
+            result = None
+            try:
+                result = analyze_capture.run_analysis(
+                    site=site_name,
+                    data_dir=config["directories"]["analysis_output"],
+                    start_utc=start_utc_input,
+                    end_utc=end_utc_input,
+                    provider=provider,
+                    api_key=api_key,
+                    max_dom_chars=self.analysis_max_dom.get(),
+                    custom_prompt=custom_prompt,
+                    combine_run=self.analysis_combine.get(),
+                )
+            except ValueError as ve:
+                # Handle "no runs found" gracefully
+                if "No runs found" in str(ve) or "No target capture directories" in str(ve):
+                    if start_utc_input or end_utc_input:
+                        self._log(f"WARNING: {ve}")
+                        self._log("Attempting to analyze latest available run instead...")
+                        # Retry without date filters
+                        try:
+                            result = analyze_capture.run_analysis(
+                                site=site_name,
+                                data_dir=config["directories"]["analysis_output"],
+                                start_utc=None,
+                                end_utc=None,
+                                provider=provider,
+                                api_key=api_key,
+                                max_dom_chars=self.analysis_max_dom.get(),
+                                custom_prompt=custom_prompt,
+                                combine_run=self.analysis_combine.get(),
+                            )
+                            self._log("✓ Successfully analyzed latest run")
+                        except Exception as fallback_exc:
+                            self._log(f"ERROR: Could not find any runs to analyze: {fallback_exc}")
+                            raise ValueError(f"No capture data available for site '{site_name}'. Please run a capture first.")
+                    else:
+                        raise ValueError(f"No capture data available for site '{site_name}'. Please run a capture first.")
+                else:
+                    raise
             
-            messagebox.showinfo("Success", "Analysis completed successfully")
+            if result:
+                self._log(f"✓ Analysis complete!")
+                self._log(f"Runs analyzed: {result['runs_analyzed']}")
+                if result.get('skipped_runs', 0) > 0:
+                    self._log(f"Runs skipped: {result['skipped_runs']} (see log for details)")
+                self._log(result["message"])
+                
+                # Extract and display analysis text
+                analysis_text = self._extract_analysis_text(result)
+                if analysis_text:
+                    self.root.after(0, lambda: self._display_analysis_results(analysis_text))
+                
+                success_msg = "Analysis completed successfully"
+                if result.get('skipped_runs', 0) > 0:
+                    success_msg += f"\n({result['skipped_runs']} run(s) skipped due to errors)"
+                messagebox.showinfo("Success", success_msg)
         except Exception as exc:
             self._log(f"ERROR: {exc}")
             messagebox.showerror("Error", f"Analysis failed: {exc}")

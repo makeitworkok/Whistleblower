@@ -55,7 +55,6 @@ class WhistleblowerUIRefactored:
 
         # Create UI
         self._create_ui()
-        self._check_api_keys()
 
     def _create_ui(self) -> None:
         """Create main UI structure."""
@@ -68,30 +67,19 @@ class WhistleblowerUIRefactored:
         )
         title_label.pack(pady=10)
 
-        # API Key Warning Banner
-        self.api_warning_frame = ttk.Frame(main_frame)
-        self.api_warning_frame.pack(fill=tk.X, pady=10)
-
-        # Browser selection frame
-        browser_frame = ttk.Frame(main_frame)
-        browser_frame.pack(fill=tk.X, pady=5)
-        ttk.Label(browser_frame, text="Browser:").pack(side=tk.LEFT, padx=5)
-        for browser in ["chromium", "firefox", "webkit"]:
-            ttk.Radiobutton(
-                browser_frame,
-                text=browser.capitalize(),
-                variable=self.browser_var,
-                value=browser,
-            ).pack(side=tk.LEFT, padx=10)
-
         # Notebook with tabs
         self.notebook = ttk.Notebook(main_frame)
         self.notebook.pack(fill=tk.BOTH, expand=True, pady=10)
 
-        # Setup tab
-        self.setup_tab = ttk.Frame(self.notebook, padding="10")
-        self.notebook.add(self.setup_tab, text="Setup")
-        self._create_setup_tab()
+        # Setup tab (API keys and settings)
+        self.settings_tab = ttk.Frame(self.notebook, padding="10")
+        self.notebook.add(self.settings_tab, text="Setup")
+        self._create_settings_tab()
+
+        # Site Management tab (site creation and management)
+        self.site_management_tab = ttk.Frame(self.notebook, padding="10")
+        self.notebook.add(self.site_management_tab, text="Site Management")
+        self._create_site_management_tab()
 
         # Capture tab
         self.capture_tab = ttk.Frame(self.notebook, padding="10")
@@ -136,10 +124,131 @@ class WhistleblowerUIRefactored:
         )
         self.log_output.pack(fill=tk.BOTH, expand=True)
 
-    def _create_setup_tab(self) -> None:
-        """Create Setup tab for site management and configuration."""
+    def _create_settings_tab(self) -> None:
+        """Create Settings tab for API keys and basic configuration."""
+        # API Keys section
+        api_frame = ttk.LabelFrame(self.settings_tab, text="API Keys", padding="10")
+        api_frame.pack(fill=tk.X, pady=10)
+
+        # API key status
+        ttk.Label(api_frame, text="API Keys Status:", font=("TkDefaultFont", 10, "bold")).pack(anchor=tk.W, pady=5)
+        
+        openai_key = os.getenv("OPENAI_API_KEY", "").strip()
+        xai_key = os.getenv("XAI_API_KEY", "").strip()
+        
+        if openai_key:
+            ttk.Label(api_frame, text="✓ OpenAI API key configured", foreground="green").pack(anchor=tk.W, padx=20)
+        else:
+            ttk.Label(api_frame, text="✗ OpenAI API key not found", foreground="red").pack(anchor=tk.W, padx=20)
+        
+        if xai_key:
+            ttk.Label(api_frame, text="✓ xAI API key configured", foreground="green").pack(anchor=tk.W, padx=20)
+        else:
+            ttk.Label(api_frame, text="✗ xAI API key not found", foreground="red").pack(anchor=tk.W, padx=20)
+        
+        ttk.Label(api_frame, text="See README.md 'API Keys for Analysis' section for setup instructions", 
+                 foreground="darkblue", wraplength=400).pack(anchor=tk.W, padx=20, pady=5)
+
+        # Basic Settings section
+        basic_frame = ttk.LabelFrame(self.settings_tab, text="Basic Settings", padding="10")
+        basic_frame.pack(fill=tk.X, pady=10)
+
+        # Browser selection
+        ttk.Label(basic_frame, text="Default Browser:").grid(row=0, column=0, sticky=tk.W, padx=5, pady=5)
+        browser_frame = ttk.Frame(basic_frame)
+        browser_frame.grid(row=0, column=1, sticky=tk.W, padx=5)
+        
+        for browser in ["chromium", "firefox", "webkit"]:
+            ttk.Radiobutton(
+                browser_frame,
+                text=browser.capitalize(),
+                variable=self.browser_var,
+                value=browser,
+            ).pack(side=tk.LEFT, padx=10)
+
+        # Default viewport
+        ttk.Label(basic_frame, text="Default Viewport:").grid(row=1, column=0, sticky=tk.W, padx=5, pady=5)
+        viewport_frame = ttk.Frame(basic_frame)
+        viewport_frame.grid(row=1, column=1, sticky=tk.W, padx=5)
+        
+        self.default_viewport_width = tk.IntVar(value=1920)
+        self.default_viewport_height = tk.IntVar(value=1080)
+        
+        ttk.Label(viewport_frame, text="Width:").pack(side=tk.LEFT)
+        ttk.Spinbox(viewport_frame, from_=640, to=3840, textvariable=self.default_viewport_width, width=6).pack(side=tk.LEFT, padx=5)
+        ttk.Label(viewport_frame, text="Height:").pack(side=tk.LEFT, padx=10)
+        ttk.Spinbox(viewport_frame, from_=480, to=2160, textvariable=self.default_viewport_height, width=6).pack(side=tk.LEFT, padx=5)
+
+        # HTTPS errors
+        ttk.Label(basic_frame, text="HTTPS Settings:").grid(row=2, column=0, sticky=tk.W, padx=5, pady=5)
+        self.default_ignore_https = tk.BooleanVar(value=True)
+        ttk.Checkbutton(basic_frame, text="Ignore HTTPS errors by default", 
+                       variable=self.default_ignore_https).grid(row=2, column=1, sticky=tk.W, padx=5)
+
+        # Advanced Options toggle
+        self.advanced_options_var = tk.BooleanVar(value=False)
+        ttk.Separator(self.settings_tab, orient=tk.HORIZONTAL).pack(fill=tk.X, pady=10)
+        
+        advanced_header = ttk.Frame(self.settings_tab)
+        advanced_header.pack(fill=tk.X, padx=10, pady=5)
+        
+        ttk.Checkbutton(advanced_header, text="Show Advanced Options", 
+                       variable=self.advanced_options_var, 
+                       command=self._toggle_advanced_options).pack(side=tk.LEFT)
+
+        # Advanced Options section (hidden by default)
+        self.advanced_frame = ttk.LabelFrame(self.settings_tab, text="Advanced Settings", padding="10")
+        self.advanced_frame.pack(fill=tk.X, pady=10, padx=10)
+        self.advanced_frame.pack_forget()  # Hide by default
+
+        # Timeout settings
+        ttk.Label(self.advanced_frame, text="Timeouts (milliseconds):", font=("TkDefaultFont", 10, "bold")).pack(anchor=tk.W, pady=5)
+        
+        timeout_frame = ttk.Frame(self.advanced_frame)
+        timeout_frame.pack(fill=tk.X, padx=20, pady=5)
+        
+        self.default_bootstrap_timeout = tk.IntVar(value=30000)
+        ttk.Label(timeout_frame, text="Bootstrap page timeout:").pack(side=tk.LEFT)
+        ttk.Spinbox(timeout_frame, from_=1000, to=300000, textvariable=self.default_bootstrap_timeout, width=10).pack(side=tk.LEFT, padx=5)
+
+        self.default_capture_timeout = tk.IntVar(value=30000)
+        ttk.Label(timeout_frame, text="Capture timeout:").pack(side=tk.LEFT, padx=20)
+        ttk.Spinbox(timeout_frame, from_=1000, to=300000, textvariable=self.default_capture_timeout, width=10).pack(side=tk.LEFT, padx=5)
+
+        # Capture settings
+        capture_frame = ttk.Frame(self.advanced_frame)
+        capture_frame.pack(fill=tk.X, padx=20, pady=10)
+        
+        self.default_record_video = tk.BooleanVar(value=False)
+        ttk.Checkbutton(capture_frame, text="Record video by default", 
+                       variable=self.default_record_video).pack(anchor=tk.W)
+
+        # Analysis settings
+        analysis_label = ttk.Label(self.advanced_frame, text="Analysis Settings:", font=("TkDefaultFont", 10, "bold"))
+        analysis_label.pack(anchor=tk.W, padx=20, pady=10)
+        
+        self.default_max_dom = tk.IntVar(value=10000)
+        analysis_frame = ttk.Frame(self.advanced_frame)
+        analysis_frame.pack(fill=tk.X, padx=20, pady=5)
+        
+        ttk.Label(analysis_frame, text="Max DOM nodes:").pack(side=tk.LEFT)
+        ttk.Spinbox(analysis_frame, from_=100, to=100000, textvariable=self.default_max_dom, width=10).pack(side=tk.LEFT, padx=5)
+
+        self.default_combine_run = tk.BooleanVar(value=False)
+        ttk.Checkbutton(self.advanced_frame, text="Combine all runs in analysis", 
+                       variable=self.default_combine_run).pack(anchor=tk.W, padx=20)
+
+    def _toggle_advanced_options(self) -> None:
+        """Toggle advanced options visibility."""
+        if self.advanced_options_var.get():
+            self.advanced_frame.pack(fill=tk.X, pady=10, padx=10)
+        else:
+            self.advanced_frame.pack_forget()
+
+    def _create_site_management_tab(self) -> None:
+        """Create Site Management tab for site creation and management."""
         # Site selection / management
-        site_frame = ttk.LabelFrame(self.setup_tab, text="Site Management", padding="10")
+        site_frame = ttk.LabelFrame(self.site_management_tab, text="Site Management", padding="10")
         site_frame.pack(fill=tk.X, pady=10)
 
         ttk.Label(site_frame, text="Select Site:").grid(row=0, column=0, sticky=tk.W, padx=5)
@@ -171,7 +280,7 @@ class WhistleblowerUIRefactored:
 
         # Current site details (read-only display)
         self.site_details_frame = ttk.LabelFrame(
-            self.setup_tab, text="Current Site Configuration", padding="10"
+            self.site_management_tab, text="Current Site Configuration", padding="10"
         )
         self.site_details_frame.pack(fill=tk.BOTH, expand=True, pady=10)
 
@@ -180,6 +289,7 @@ class WhistleblowerUIRefactored:
             self.site_details_frame, height=15, width=80, state="disabled", bg="lightgray"
         )
         self.site_details_text.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
+
 
     def _create_capture_tab(self) -> None:
         """Create simplified Capture tab."""
@@ -353,12 +463,12 @@ class WhistleblowerUIRefactored:
     def _show_initialize_button(self) -> None:
         """Show Initialize Site button if site is loaded."""
         # Clear old buttons if exist
-        for widget in self.setup_tab.winfo_children():
+        for widget in self.site_management_tab.winfo_children():
             if isinstance(widget, ttk.Button) and widget.cget("text") in ["Initialize Site", "Stop Bootstrap"]:
                 widget.destroy()
         
         # Add button to initialize site
-        button_frame = ttk.Frame(self.setup_tab)
+        button_frame = ttk.Frame(self.site_management_tab)
         button_frame.pack(pady=10)
         
         self.init_btn = ttk.Button(
@@ -810,47 +920,6 @@ Analysis Settings:
             messagebox.showerror("Error", f"Analysis failed: {exc}")
         finally:
             self.root.after(0, lambda: self.analysis_btn.config(state="normal"))
-
-    def _check_api_keys(self) -> None:
-        """Check and display API key status."""
-        openai_key = os.getenv("OPENAI_API_KEY", "").strip()
-        xai_key = os.getenv("XAI_API_KEY", "").strip()
-        
-        if not openai_key and not xai_key:
-            # Show warning banner
-            warning_frame = ttk.Frame(self.api_warning_frame, relief=tk.RIDGE, borderwidth=2)
-            warning_frame.pack(fill=tk.X)
-            
-            warning_text = ttk.Label(
-                warning_frame,
-                text="⚠ WARNING: No API key detected. Analysis won't work.",
-                foreground="red",
-                font=("TkDefaultFont", 10, "bold"),
-            )
-            warning_text.pack(pady=10, padx=10)
-            
-            help_text = ttk.Label(
-                warning_frame,
-                text="See README.md 'API Keys for Analysis' section for setup instructions",
-                foreground="darkred",
-            )
-            help_text.pack(pady=5, padx=10)
-        else:
-            keys_found = []
-            if openai_key:
-                keys_found.append("OpenAI")
-            if xai_key:
-                keys_found.append("xAI")
-            
-            ok_frame = ttk.Frame(self.api_warning_frame)
-            ok_frame.pack(fill=tk.X)
-            
-            ok_text = ttk.Label(
-                ok_frame,
-                text=f"✓ API Keys found: {', '.join(keys_found)}",
-                foreground="green",
-            )
-            ok_text.pack(pady=5, padx=10)
 
     def _log(self, message: str, replace_last: bool = False) -> None:
         """Add message to log (thread-safe)."""

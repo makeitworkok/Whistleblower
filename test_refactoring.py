@@ -14,7 +14,8 @@ def test_imports():
     try:
         import bootstrap_recorder
         import whistleblower
-        print("✓ Successfully imported bootstrap_recorder and whistleblower")
+        import analyze_capture
+        print("✓ Successfully imported bootstrap_recorder, whistleblower, and analyze_capture")
         return True
     except ImportError as exc:
         print(f"✗ Import failed: {exc}")
@@ -49,16 +50,33 @@ def test_capture_function_exists():
         return False
 
 
+def test_analysis_function_exists():
+    """Test that run_analysis() function exists."""
+    print("\nTesting analyze_capture.run_analysis() exists...")
+    try:
+        import analyze_capture
+        assert hasattr(analyze_capture, 'run_analysis'), "run_analysis function not found"
+        assert callable(analyze_capture.run_analysis), "run_analysis is not callable"
+        print("✓ analyze_capture.run_analysis() exists and is callable")
+        return True
+    except (AssertionError, ImportError) as exc:
+        print(f"✗ Test failed: {exc}")
+        return False
+
+
 def test_cli_still_works():
     """Test that CLI entry points still exist."""
     print("\nTesting CLI compatibility...")
     try:
         import bootstrap_recorder
         import whistleblower
+        import analyze_capture
         assert hasattr(bootstrap_recorder, 'main'), "bootstrap_recorder.main() not found"
         assert hasattr(whistleblower, 'main'), "whistleblower.main() not found"
+        assert hasattr(analyze_capture, 'main'), "analyze_capture.main() not found"
         assert callable(bootstrap_recorder.main), "bootstrap_recorder.main() not callable"
         assert callable(whistleblower.main), "whistleblower.main() not callable"
+        assert callable(analyze_capture.main), "analyze_capture.main() not callable"
         print("✓ CLI entry points (main functions) still exist")
         return True
     except (AssertionError, ImportError) as exc:
@@ -73,6 +91,7 @@ def test_function_signatures():
         import inspect
         import bootstrap_recorder
         import whistleblower
+        import analyze_capture
         
         # Check bootstrap signature
         bootstrap_sig = inspect.signature(bootstrap_recorder.run_bootstrap)
@@ -94,6 +113,16 @@ def test_function_signatures():
             assert param in capture_params, f"Missing parameter: {param}"
         print(f"✓ whistleblower.run_capture() has correct parameters")
         
+        # Check analysis signature
+        analysis_sig = inspect.signature(analyze_capture.run_analysis)
+        analysis_params = list(analysis_sig.parameters.keys())
+        expected_analysis = ['run_dir', 'data_dir', 'site', 'start_utc', 'end_utc',
+                            'provider', 'model', 'endpoint', 'api_key', 'api_key_env',
+                            'max_dom_chars', 'custom_prompt', 'combine_run', 'env_file']
+        for param in expected_analysis:
+            assert param in analysis_params, f"Missing parameter: {param}"
+        print(f"✓ analyze_capture.run_analysis() has correct parameters")
+        
         return True
     except (AssertionError, ImportError) as exc:
         print(f"✗ Test failed: {exc}")
@@ -110,6 +139,7 @@ def main():
         test_imports,
         test_bootstrap_function_exists,
         test_capture_function_exists,
+        test_analysis_function_exists,
         test_cli_still_works,
         test_function_signatures,
     ]

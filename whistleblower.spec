@@ -1,50 +1,83 @@
 # -*- mode: python ; coding: utf-8 -*-
-"""PyInstaller spec file for Whistleblower Windows executable."""
+"""
+PyInstaller spec file for Whistleblower Tkinter UI.
 
-from PyInstaller.utils.hooks import collect_data_files, collect_submodules
-import os
+This builds a Windows executable with all dependencies bundled.
+
+To build:
+    pyinstaller whistleblower.spec
+
+The executable will be in the dist/ folder.
+"""
+
+import sys
+from pathlib import Path
 
 block_cipher = None
 
-# Collect all Python scripts
+# Collect data files (sites/*.json configs and docs)
+datas = [
+    ('sites', 'sites'),
+    ('docs', 'docs'),
+    ('README.md', '.'),
+    ('LICENSE', '.'),
+    ('requirements.txt', '.'),
+]
+
+# Test imports for site_config and other modules
+hiddenimports = [
+    'analyze_capture',
+    'bootstrap_recorder',
+    'whistleblower',
+    'site_config',
+    'playwright',
+    'playwright.sync_api',
+    'tkinter',
+    'tkinter.ttk',
+    'tkinter.scrolledtext',
+    'tkinter.filedialog',
+    'tkinter.messagebox',
+    'queue',
+    'threading',
+    'json',
+    'pathlib',
+]
+
+# Analysis - find all Python modules and dependencies
 a = Analysis(
-    ['ui_app.py'],
+    ['tkinter_ui_refactored.py'],
     pathex=[],
     binaries=[],
-    datas=[
-        # Include all site configuration files
-        ('sites/*.json', 'sites'),
-        ('sites/*.md', 'sites'),
-        # Include documentation
-        ('docs/*.md', 'docs'),
-        # Include scripts
-        ('scripts/*', 'scripts'),
-        # Include README and other root docs
-        ('README.md', '.'),
-        ('LICENSE', '.'),
-        ('requirements.txt', '.'),
-        # Include Python modules that are called as subprocesses
-        ('whistleblower.py', '.'),
-        ('bootstrap_recorder.py', '.'),
-        ('analyze_capture.py', '.'),
-        ('codegen-session.py', '.'),
-    ],
-    hiddenimports=[
-        'playwright',
-        'playwright.sync_api',
-    ],
+    datas=datas,
+    hiddenimports=hiddenimports,
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
-    excludes=[],
+    excludes=[
+        'matplotlib',
+        'numpy',
+        'pandas',
+        'PIL',
+        'PyQt5',
+        'PyQt6',
+        'PySide2',
+        'PySide6',
+        'wx',
+    ],
     win_no_prefer_redirects=False,
     win_private_assemblies=False,
     cipher=block_cipher,
     noarchive=False,
 )
 
-pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
+# PYZ archive of pure Python modules
+pyz = PYZ(
+    a.pure,
+    a.zipped_data,
+    cipher=block_cipher,
+)
 
+# EXE executable
 exe = EXE(
     pyz,
     a.scripts,
@@ -55,15 +88,16 @@ exe = EXE(
     bootloader_ignore_signals=False,
     strip=False,
     upx=True,
-    console=True,  # Keep console window for logging
+    console=False,  # Set to False for GUI app (no console window)
     disable_windowed_traceback=False,
     argv_emulation=False,
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon=None,  # Add icon path here if you have one
+    icon=None,  # Add icon='icon.ico' if you have an icon file
 )
 
+# COLLECT - gather all files for distribution
 coll = COLLECT(
     exe,
     a.binaries,

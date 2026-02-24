@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# Copyright (c) 2025-2026 Chris Favre - MIT License
+# See LICENSE file for full terms
 """Interactive, read-only bootstrap recorder for Whistleblower configs."""
 
 from __future__ import annotations
@@ -317,19 +319,49 @@ def build_step_suggestions(events: list[dict[str, Any]]) -> list[dict[str, Any]]
     return suggestions
 
 
-def main() -> int:
-    args = parse_args()
-    if not args.url.startswith(("http://", "https://")):
-        args.url = "https://" + args.url
-    if args.viewport_width < 1 or args.viewport_height < 1:
-        raise SystemExit("ERROR: --viewport-width and --viewport-height must be >= 1.")
+def run_bootstrap(
+    url: str,
+    site_name: str,
+    output_dir: str = "data/bootstrap",
+    config_out: str | None = None,
+    steps_out: str | None = None,
+    viewport_width: int = 1920,
+    viewport_height: int = 1080,
+    ignore_https_errors: bool = False,
+    record_video: bool = False,
+    browser_type: str = "chromium",
+    finish_flag_file: str | None = None,
+) -> dict[str, Any]:
+    """
+    Run bootstrap recording session.
+    
+    Args:
+        url: Starting login URL
+        site_name: Friendly site name for output files
+        output_dir: Root directory for artifacts
+        config_out: Optional explicit output path for config JSON
+        steps_out: Optional explicit output path for steps JSON
+        viewport_width: Browser viewport width
+        viewport_height: Browser viewport height
+        ignore_https_errors: Ignore HTTPS cert errors
+        record_video: Record session video
+        browser_type: Browser to use (chromium, firefox, webkit)
+        finish_flag_file: Optional path to file - when created, bootstrap finalizes
+    
+    Returns:
+        Dictionary with summary info: site_name, config_out, steps_out, artifacts_dir, events_recorded
+    """
+    if not url.startswith(("http://", "https://")):
+        url = "https://" + url
+    if viewport_width < 1 or viewport_height < 1:
+        raise ValueError("viewport_width and viewport_height must be >= 1.")
 
-    site_name = sanitize_name(args.site_name)
-    run_root = Path(args.output_dir) / site_name / utc_timestamp()
+    site_name = sanitize_name(site_name)
+    run_root = Path(output_dir) / site_name / utc_timestamp()
     run_root.mkdir(parents=True, exist_ok=False)
 
-    config_out = Path(args.config_out) if args.config_out else Path("sites") / f"{site_name}.bootstrap.json"
-    steps_out = Path(args.steps_out) if args.steps_out else Path("sites") / f"{site_name}.steps.json"
+    config_out_path = Path(config_out) if config_out else Path("sites") / f"{site_name}.bootstrap.json"
+    steps_out_path = Path(steps_out) if steps_out else Path("sites") / f"{site_name}.steps.json"
 
     events: list[dict[str, Any]] = []
     final_screenshot_path = run_root / "final.png"
@@ -337,34 +369,40 @@ def main() -> int:
     summary_path = run_root / "summary.json"
 
     with sync_playwright() as p:
-        # On Windows, try Edge first (usually pre-installed), then Chromium
+        # Launch browser based on browser_type parameter
         browser = None
-        if sys.platform == "win32":
-            for channel in ["msedge", None]:
-                try:
-                    if channel:
-                        browser = p.chromium.launch(headless=False, channel=channel)
-                    else:
-                        browser = p.chromium.launch(headless=False)
-                    break
-                except Exception:
-                    continue
-            if browser is None:
-                raise RuntimeError("Could not launch browser. Please install Edge or run: py -m playwright install chromium")
-        else:
-            browser = p.chromium.launch(headless=False)
+        if browser_type == "firefox":
+            browser = p.firefox.launch(headless=False)
+        elif browser_type == "webkit":
+            browser = p.webkit.launch(headless=False)
+        else:  # chromium (default) - includes Edge on Windows
+            if sys.platform == "win32":
+                # On Windows, try Edge first (usually pre-installed), then Chromium
+                for channel in ["msedge", None]:
+                    try:
+                        if channel:
+                            browser = p.chromium.launch(headless=False, channel=channel)
+                        else:
+                            browser = p.chromium.launch(headless=False)
+                        break
+                    except Exception:
+                        continue
+                if browser is None:
+                    raise RuntimeError("Could not launch browser. Please install Edge or run: py -m playwright install chromium")
+            else:
+                browser = p.chromium.launch(headless=False)
         
         context_options: dict[str, Any] = {
-            "ignore_https_errors": bool(args.ignore_https_errors),
-            "viewport": {"width": args.viewport_width, "height": args.viewport_height},
+            "ignore_https_errors": bool(ignore_https_errors),
+            "viewport": {"width": viewport_width, "height": viewport_height},
         }
-        if args.record_video:
+        if record_video:
             video_dir = run_root / "video"
             video_dir.mkdir(parents=True, exist_ok=True)
             context_options["record_video_dir"] = str(video_dir)
             context_options["record_video_size"] = {
-                "width": args.viewport_width,
-                "height": args.viewport_height,
+                "width": viewport_width,
+                "height": viewport_height,
             }
         context = browser.new_context(**context_options)
 
@@ -399,24 +437,38 @@ def main() -> int:
             )
 
         page.on("framenavigated", on_frame_navigated)
-        page.goto(args.url, wait_until="domcontentloaded", timeout=120000)
+        page.goto(url, wait_until="domcontentloaded", timeout=120000)
 
         print("")
         print("Recorder is running in a real browser window.")
         print("1) Perform login and navigation exactly as an operator would.")
         print("2) Do not trigger control changes (read-only workflow only).")
-        print("3) Return here and press Enter to finish and write outputs.")
-        print("Press Enter when finished...", flush=True)
         
-        # Use stdin.readline() instead of input() for piped stdin compatibility
-        try:
-            sys.stdin.readline()
-        except (EOFError, OSError):
-            pass
+        if finish_flag_file:
+            print(f"3) Click 'Stop Bootstrap' in the UI when finished.")
+            print("Waiting for completion signal...", flush=True)
+            
+            # Wait for the flag file to be created (checked every 100ms)
+            import time
+            while not Path(finish_flag_file).exists():
+                time.sleep(0.1)
+            
+            # Clean up flag file
+            Path(finish_flag_file).unlink(missing_ok=True)
+            print("\nBootstrap finalized by user.")
+        else:
+            print("3) Return here and press Enter to finish and write outputs.")
+            print("Press Enter when finished...", flush=True)
+            
+            # Use stdin.readline() instead of input() for piped stdin compatibility
+            try:
+                sys.stdin.readline()
+            except (EOFError, OSError):
+                pass
 
         page.screenshot(path=str(final_screenshot_path), full_page=False)
 
-        if args.record_video and page.video is not None:
+        if record_video and page.video is not None:
             page.close()
             page.video.save_as(str(run_root / "video" / "session.mp4"))
         else:
@@ -433,7 +485,7 @@ def main() -> int:
         user_selector=inferred_login["user_selector"],
         pass_selector=inferred_login["pass_selector"],
     )
-    watch_urls = infer_watch_urls(args.url, events)
+    watch_urls = infer_watch_urls(url, events)
     watch = []
     for ix, url in enumerate(watch_urls[:8]):
         watch.append(
@@ -448,12 +500,12 @@ def main() -> int:
 
     generated_config = {
         "name": site_name,
-        "base_url": args.url,
-        "ignore_https_errors": bool(args.ignore_https_errors),
+        "base_url": url,
+        "ignore_https_errors": bool(ignore_https_errors),
         "login_attempts": 2,
         "viewport": {
-            "width": args.viewport_width,
-            "height": args.viewport_height,
+            "width": viewport_width,
+            "height": viewport_height,
         },
         "login": {
             "username": inferred_credentials["username"],
@@ -469,7 +521,7 @@ def main() -> int:
     step_suggestions = {
         "site_name": site_name,
         "captured_at_utc": iso_utc_now(),
-        "base_url": args.url,
+        "base_url": url,
         "suggested_pre_click_steps": build_step_suggestions(events),
         "notes": [
             "Review selectors before use; dynamic classes may need refinement.",
@@ -483,15 +535,15 @@ def main() -> int:
         },
     }
 
-    config_out.parent.mkdir(parents=True, exist_ok=True)
-    steps_out.parent.mkdir(parents=True, exist_ok=True)
-    config_out.write_text(json.dumps(generated_config, indent=2), encoding="utf-8")
-    steps_out.write_text(json.dumps(step_suggestions, indent=2), encoding="utf-8")
+    config_out_path.parent.mkdir(parents=True, exist_ok=True)
+    steps_out_path.parent.mkdir(parents=True, exist_ok=True)
+    config_out_path.write_text(json.dumps(generated_config, indent=2), encoding="utf-8")
+    steps_out_path.write_text(json.dumps(step_suggestions, indent=2), encoding="utf-8")
 
     summary = {
         "site_name": site_name,
-        "config_out": str(config_out),
-        "steps_out": str(steps_out),
+        "config_out": str(config_out_path),
+        "steps_out": str(steps_out_path),
         "artifacts_dir": str(run_root),
         "events_recorded": len(events),
     }
@@ -499,10 +551,31 @@ def main() -> int:
 
     print("")
     print("Bootstrap capture complete.")
-    print(f"- Config scaffold: {config_out}")
-    print(f"- Step suggestions: {steps_out}")
+    print(f"- Config scaffold: {config_out_path}")
+    print(f"- Step suggestions: {steps_out_path}")
     print(f"- Raw artifacts: {run_root}")
-    return 0
+    return summary
+
+
+def main() -> int:
+    """CLI entry point for bootstrap recorder."""
+    args = parse_args()
+    try:
+        summary = run_bootstrap(
+            url=args.url,
+            site_name=args.site_name,
+            output_dir=args.output_dir,
+            config_out=args.config_out,
+            steps_out=args.steps_out,
+            viewport_width=args.viewport_width,
+            viewport_height=args.viewport_height,
+            ignore_https_errors=args.ignore_https_errors,
+            record_video=args.record_video,
+        )
+        return 0
+    except Exception as exc:
+        print(f"ERROR: {exc}", file=sys.stderr)
+        return 1
 
 
 if __name__ == "__main__":

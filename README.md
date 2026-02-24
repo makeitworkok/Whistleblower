@@ -1,7 +1,7 @@
 # Whistleblower
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Python](https://img.shields.io/badge/Python-3.11%2B-blue.svg)](https://www.python.org/)
+[![Python](https://img.shields.io/badge/Python-3.12%2B-blue.svg)](https://www.python.org/)
 [![Status](https://img.shields.io/badge/Status-Alpha-orange.svg)](#current-status)
 
 > Read-only evidence capture for dashboards.
@@ -68,7 +68,7 @@ Whistleblower is intended to be read-only. Configure the BAS account it uses wit
 
 ### From Source
 
-- Python 3.11+ (`whistleblower.py`, `ui_app.py`, `bootstrap_recorder.py`, `analyze_capture.py`)
+- Python 3.12+ (`whistleblower.py`, `tkinter_ui_refactored.py`, `bootstrap_recorder.py`, `analyze_capture.py`)
 - Valid credentials for the BAS web interface you want to watch
 - Internet for the initial dependency/browser install and only when using API-backed analysis providers
 

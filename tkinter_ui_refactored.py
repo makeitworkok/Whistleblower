@@ -127,27 +127,63 @@ class WhistleblowerUIRefactored:
     def _create_settings_tab(self) -> None:
         """Create Settings tab for API keys and basic configuration."""
         # API Keys section
-        api_frame = ttk.LabelFrame(self.settings_tab, text="API Keys", padding="10")
+        api_frame = ttk.LabelFrame(self.settings_tab, text="API Keys for Analysis", padding="10")
         api_frame.pack(fill=tk.X, pady=10)
 
-        # API key status
-        ttk.Label(api_frame, text="API Keys Status:", font=("TkDefaultFont", 10, "bold")).pack(anchor=tk.W, pady=5)
+        # Load stored API keys (from .env file or environment)
+        import os
+        from pathlib import Path
         
-        openai_key = os.getenv("OPENAI_API_KEY", "").strip()
-        xai_key = os.getenv("XAI_API_KEY", "").strip()
+        env_file = Path.home() / ".whistleblower_env"
+        stored_keys = {}
+        if env_file.exists():
+            with open(env_file, "r") as f:
+                for line in f:
+                    line = line.strip()
+                    if "=" in line and not line.startswith("#"):
+                        key, value = line.split("=", 1)
+                        stored_keys[key.strip()] = value.strip()
         
-        if openai_key:
-            ttk.Label(api_frame, text="✓ OpenAI API key configured", foreground="green").pack(anchor=tk.W, padx=20)
-        else:
-            ttk.Label(api_frame, text="✗ OpenAI API key not found", foreground="red").pack(anchor=tk.W, padx=20)
+        # Get current keys from environment
+        openai_key = os.getenv("OPENAI_API_KEY", stored_keys.get("OPENAI_API_KEY", "")).strip()
+        xai_key = os.getenv("XAI_API_KEY", stored_keys.get("XAI_API_KEY", "")).strip()
         
-        if xai_key:
-            ttk.Label(api_frame, text="✓ xAI API key configured", foreground="green").pack(anchor=tk.W, padx=20)
-        else:
-            ttk.Label(api_frame, text="✗ xAI API key not found", foreground="red").pack(anchor=tk.W, padx=20)
+        # OpenAI Key
+        openai_frame = ttk.Frame(api_frame)
+        openai_frame.pack(fill=tk.X, pady=5)
         
-        ttk.Label(api_frame, text="See README.md 'API Keys for Analysis' section for setup instructions", 
-                 foreground="darkblue", wraplength=400).pack(anchor=tk.W, padx=20, pady=5)
+        ttk.Label(openai_frame, text="OpenAI API Key:", width=15).pack(side=tk.LEFT, padx=5)
+        self.openai_key_var = tk.StringVar(value=openai_key if openai_key else "")
+        openai_entry = ttk.Entry(openai_frame, textvariable=self.openai_key_var, width=50, show="*")
+        openai_entry.pack(side=tk.LEFT, padx=5)
+        
+        self.openai_status_label = ttk.Label(openai_frame, text="")
+        self.openai_status_label.pack(side=tk.LEFT, padx=5)
+        self._update_api_status()
+        
+        # xAI Key
+        xai_frame = ttk.Frame(api_frame)
+        xai_frame.pack(fill=tk.X, pady=5)
+        
+        ttk.Label(xai_frame, text="xAI API Key:", width=15).pack(side=tk.LEFT, padx=5)
+        self.xai_key_var = tk.StringVar(value=xai_key if xai_key else "")
+        xai_entry = ttk.Entry(xai_frame, textvariable=self.xai_key_var, width=50, show="*")
+        xai_entry.pack(side=tk.LEFT, padx=5)
+        
+        self.xai_status_label = ttk.Label(xai_frame, text="")
+        self.xai_status_label.pack(side=tk.LEFT, padx=5)
+        
+        # Save button
+        button_frame = ttk.Frame(api_frame)
+        button_frame.pack(fill=tk.X, pady=10)
+        
+        ttk.Button(button_frame, text="Save API Keys", command=self._save_api_keys, width=20).pack(side=tk.LEFT, padx=5)
+        ttk.Label(button_frame, text="Keys are securely stored in your home directory", 
+                 foreground="gray", font=("TkDefaultFont", 9)).pack(side=tk.LEFT, padx=10)
+        
+        # Info text
+        ttk.Label(api_frame, text="Get keys from: OpenAI (platform.openai.com) or xAI (console.x.ai)", 
+                 foreground="darkblue", wraplength=600, font=("TkDefaultFont", 9)).pack(anchor=tk.W, padx=5, pady=5)
 
         # Basic Settings section
         basic_frame = ttk.LabelFrame(self.settings_tab, text="Basic Settings", padding="10")
@@ -244,6 +280,51 @@ class WhistleblowerUIRefactored:
             self.advanced_frame.pack(fill=tk.X, pady=10, padx=10)
         else:
             self.advanced_frame.pack_forget()
+
+    def _update_api_status(self) -> None:
+        """Update API key status indicators."""
+        openai = self.openai_key_var.get().strip()
+        xai = self.xai_key_var.get().strip()
+        
+        if openai:
+            self.openai_status_label.config(text="✓ Configured", foreground="green")
+        else:
+            self.openai_status_label.config(text="✗ Not set", foreground="red")
+        
+        if xai:
+            self.xai_status_label.config(text="✓ Configured", foreground="green")
+        else:
+            self.xai_status_label.config(text="✗ Not set", foreground="red")
+
+    def _save_api_keys(self) -> None:
+        """Save API keys to persistent storage."""
+        openai = self.openai_key_var.get().strip()
+        xai = self.xai_key_var.get().strip()
+        
+        # Save to user's home directory
+        env_file = Path.home() / ".whistleblower_env"
+        
+        try:
+            with open(env_file, "w") as f:
+                f.write("# Whistleblower API Keys\n")
+                f.write("# These keys are used for AI-powered analysis\n\n")
+                if openai:
+                    f.write(f"OPENAI_API_KEY={openai}\n")
+                if xai:
+                    f.write(f"XAI_API_KEY={xai}\n")
+            
+            # Set in current environment
+            if openai:
+                os.environ["OPENAI_API_KEY"] = openai
+            if xai:
+                os.environ["XAI_API_KEY"] = xai
+            
+            self._update_api_status()
+            self._log("✓ API keys saved successfully")
+            messagebox.showinfo("Success", f"API keys saved to:\n{env_file}\n\nKeys are now active for this session.")
+        except Exception as e:
+            self._log(f"ERROR saving API keys: {e}")
+            messagebox.showerror("Error", f"Failed to save API keys: {e}")
 
     def _create_site_management_tab(self) -> None:
         """Create Site Management tab for site creation and management."""

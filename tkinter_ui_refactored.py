@@ -43,7 +43,7 @@ class WhistleblowerUIRefactored:
         self.bootstrap_running = False
 
         # Log queue system
-        self.log_queue: queue.Queue[str] = queue.Queue()
+        self.log_queue: queue.Queue[tuple[str, str, bool]] = queue.Queue()
         self.root.after(100, self._process_log_queue)
 
         # Current site configuration
@@ -334,7 +334,7 @@ class WhistleblowerUIRefactored:
             tuple: (is_valid, error_message)
         """
         try:
-            import requests
+            import requests  # type: ignore[import-not-found]
         except ImportError:
             return False, "requests library not installed (run: pip install requests)"
         

@@ -15,9 +15,18 @@ from pathlib import Path
 
 block_cipher = None
 
-# Collect data files (sites/*.json configs and docs)
+# Collect data files (only safe site templates/examples + docs)
+sites_dir = Path('sites')
+site_files = []
+for pattern in ('*.template.json', '*.example.json'):
+    site_files.extend(sites_dir.glob(pattern))
+example_site = sites_dir / 'example.json'
+if example_site.exists():
+    site_files.append(example_site)
+
 datas = [
-    ('sites', 'sites'),
+    *[(str(p), 'sites') for p in sorted(site_files)],
+    ('sites/README.md', 'sites'),
     ('docs', 'docs'),
     ('README.md', '.'),
     ('LICENSE', '.'),

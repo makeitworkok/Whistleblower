@@ -3,8 +3,72 @@
 
 from __future__ import annotations
 
+import sys
+import logging
+from pathlib import Path as LogPath
+
+# Set up logging to file for debugging Finder launches
+log_file = LogPath.home() / "whistleblower_launch.log"
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler(log_file, mode='a'),
+        logging.StreamHandler(sys.stdout)
+    ]
+)
+logging.info("="*60)
+logging.info("Whistleblower starting...")
+logging.info(f"Python: {sys.version}")
+logging.info(f"Working directory: {LogPath.cwd()}")
+logging.info(f"Script location: {LogPath(__file__).resolve()}")
+logging.info(f"Log file: {log_file}")
+
+# Detect if running from macOS app bundle
+def setup_data_directories():
+    """Set up proper data directories when running as packaged app."""
+    if getattr(sys, 'frozen', False):
+        # Running as PyInstaller bundle
+        bundle_dir = LogPath(sys._MEIPASS)
+        logging.info(f"Running as packaged app from: {bundle_dir}")
+        
+        # Use user's Application Support directory for writable data
+        if sys.platform == 'darwin':
+            app_support = LogPath.home() / "Library" / "Application Support" / "Whistleblower"
+        elif sys.platform == 'win32':
+            app_support = LogPath(os.environ.get('APPDATA', LogPath.home())) / "Whistleblower"
+        else:
+            app_support = LogPath.home() / ".whistleblower"
+        
+        app_support.mkdir(parents=True, exist_ok=True)
+        logging.info(f"App data directory: {app_support}")
+        
+        # Create necessary subdirectories
+        sites_dir = app_support / "sites"
+        data_dir = app_support / "data"
+        sites_dir.mkdir(exist_ok=True)
+        data_dir.mkdir(exist_ok=True)
+        
+        # Copy template sites from bundle if user's sites dir is empty
+        bundle_sites = bundle_dir / "sites"
+        if bundle_sites.exists() and not any(sites_dir.iterdir()):
+            import shutil
+            logging.info(f"Copying template sites from bundle...")
+            for item in bundle_sites.iterdir():
+                if item.is_file():
+                    shutil.copy2(item, sites_dir / item.name)
+                    logging.info(f"  Copied: {item.name}")
+        
+        # Change working directory to app support
+        os.chdir(app_support)
+        logging.info(f"Changed working directory to: {app_support}")
+    else:
+        logging.info("Running from source (not packaged)")
+
+# Set up directories before importing app modules
+setup_data_directories()
+
 import json
-import os
 import queue
 import threading
 import tkinter as tk
@@ -1636,10 +1700,32 @@ Analysis Settings:
 
 def main() -> None:
     """Main entry point."""
-    root = tk.Tk()
-    app = WhistleblowerUIRefactored(root)
-    root.mainloop()
+    try:
+        logging.info("Creating Tk root window...")
+        root = tk.Tk()
+        logging.info("Initializing WhistleblowerUIRefactored...")
+        app = WhistleblowerUIRefactored(root)
+        logging.info("Starting mainloop...")
+        root.mainloop()
+        logging.info("Application closed normally")
+    except Exception as e:
+        logging.exception(f"FATAL ERROR: {e}")
+        import traceback
+        error_msg = f"Error: {e}\n\nTraceback:\n{traceback.format_exc()}"
+        logging.error(error_msg)
+        # Try to show error dialog if possible
+        try:
+            import tkinter.messagebox as mb
+            mb.showerror("Whistleblower Error", f"Application failed to start:\n\n{e}\n\nCheck ~/whistleblower_launch.log for details")
+        except:
+            pass
+        raise
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        logging.info("__main__ block executing...")
+        main()
+    except Exception as e:
+        logging.exception(f"Unhandled exception in __main__: {e}")
+        sys.exit(1)

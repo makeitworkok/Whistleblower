@@ -1,10 +1,10 @@
 # Whistleblower Tkinter UI - Build & Distribution Guide
 
-This guide covers the Tkinter desktop UI version of Whistleblower, designed for easy distribution as a Windows executable.
+This guide covers the Tkinter desktop UI version of Whistleblower, designed for easy distribution on macOS and Windows.
 
 ## Overview
 
-The Tkinter UI (`tkinter_ui.py`) provides a native desktop interface that:
+The Tkinter UI (`tkinter_ui_refactored.py`) provides a native desktop interface that:
 
 - Eliminates the need for subprocess calls (direct function imports)
 - Works better with PyInstaller for creating executables
@@ -18,17 +18,33 @@ The Tkinter UI (`tkinter_ui.py`) provides a native desktop interface that:
 
 ```bash
 # Install Python dependencies
-pip install -r requirements.txt
+python -m pip install -r requirements.txt
 
 # Install Playwright browsers
-playwright install
+python -m playwright install chromium
 ```
 
 ### Launch the UI
 
 ```bash
-python tkinter_ui.py
+python tkinter_ui_refactored.py
 ```
+
+## Building macOS .app
+
+```bash
+chmod +x build-macos.sh
+./build-macos.sh
+```
+
+Optional DMG:
+
+```bash
+chmod +x create-dmg.sh
+./create-dmg.sh
+```
+
+For more detail, see [BUILD-GUIDE.md](BUILD-GUIDE.md).
 
 ## Building Windows Executable
 
@@ -81,7 +97,7 @@ pause
 Flask Web Server
   └─> HTTP Endpoint
        └─> subprocess.Popen (python bootstrap_recorder.py)
-            └─> Selenium Browser Automation
+            └─> Playwright Browser Automation
 ```
 
 **Problem**: PyInstaller bundles break subprocess calls to Python scripts.
@@ -111,9 +127,9 @@ Tkinter Desktop UI
 - Kept `main()` for CLI compatibility
 - No subprocess needed
 
-### tkinter_ui.py
+### tkinter_ui_refactored.py
 
-- New desktop UI using Tkinter
+- Desktop UI using Tkinter
 - Imports modules directly: `import bootstrap_recorder, whistleblower`
 - Runs operations in threads to keep UI responsive
 - Real-time log output via queue
@@ -152,6 +168,11 @@ When distributing to Windows users:
 
 - Playwright browsers not installed for the distribution
 - Solution: Run `playwright install chromium` in dist folder
+
+### macOS app quits immediately
+
+- Check the launch log: `~/whistleblower_launch.log`
+- Check app data directory: `~/Library/Application Support/Whistleblower/`
 
 ### Executable opens console window
 

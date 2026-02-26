@@ -1,6 +1,6 @@
 # Whistleblower Roadmap
 
-Last updated: 2026-02-19
+Last updated: 2026-02-26
 
 ## Milestones
 
@@ -74,6 +74,7 @@ Last updated: 2026-02-19
 - Land thin `M3` vertical slice for one target with deterministic outputs.
 - Keep capture artifact schema stable while diff format is introduced.
 - Continue reliability fixes for hash-routed/loading-prone BAS views.
+- Packaging status: Tkinter desktop UI and macOS build path live on `windows-exe` branch; Windows build/testing still pending before merge to `main`.
 
 ### Next
 

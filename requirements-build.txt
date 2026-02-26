@@ -2,3 +2,4 @@
 # Install these in addition to requirements.txt when building
 
 pyinstaller>=6.0.0
+Pillow>=10.0.0

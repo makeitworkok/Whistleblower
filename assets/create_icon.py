@@ -4,11 +4,19 @@ Create application icon from text or image.
 This script generates icons for macOS (.icns) and Windows (.ico).
 """
 
+import importlib
+from typing import Any
+
 try:
-    from PIL import Image, ImageDraw, ImageFont
+    Image: Any = importlib.import_module("PIL.Image")
+    ImageDraw: Any = importlib.import_module("PIL.ImageDraw")
+    ImageFont: Any = importlib.import_module("PIL.ImageFont")
     HAS_PIL = True
-except ImportError:
+except ModuleNotFoundError:
     HAS_PIL = False
+    Image = None
+    ImageDraw = None
+    ImageFont = None
     print("Note: Install Pillow for icon generation: pip install Pillow")
 
 def create_simple_icon(output_path="icon.png", size=512):

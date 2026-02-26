@@ -5,50 +5,62 @@ This guide explains how to build standalone executables and installers for Whist
 ## Prerequisites
 
 ### All Platforms
+
 - Python 3.12 or higher
 - pip (Python package manager)
 
-### macOS
+### macOS (Prerequisites)
+
 - Xcode Command Line Tools: `xcode-select --install`
 - Homebrew (recommended): `/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"`
 
-### Windows
+### Windows (Prerequisites)
+
 - Windows 10 or later
 - Microsoft Visual C++ Redistributable (usually pre-installed)
 
 ## Quick Start
 
-### macOS
+### macOS (Quick Start)
 
 1. **Build the application:**
+
    ```bash
    chmod +x build-macos.sh
    ./build-macos.sh
    ```
 
 2. **Create DMG installer (optional):**
+
    ```bash
    chmod +x create-dmg.sh
    ./create-dmg.sh
    ```
 
 3. **Find your build:**
+
    - Application: `dist/Whistleblower.app`
    - DMG Installer: `dist/Whistleblower-macOS-v1.0.0.dmg`
 
-### Windows
+> Tip: If you have not installed dependencies yet, see the macOS setup steps below
+> (create `.venv312`, install `requirements.txt`, then `pyinstaller` and `Pillow`).
+
+### Windows (Quick Start)
 
 1. **Build the application:**
+
    ```cmd
    build-windows-exe.bat
    ```
 
 2. **Create ZIP installer (optional):**
+
    ```cmd
    create-installer.bat
    ```
 
 3. **Find your build:**
+
    - Application: `dist\Whistleblower\Whistleblower.exe`
    - ZIP Installer: `dist\Whistleblower-Windows-v1.0.0.zip`
 
@@ -56,7 +68,8 @@ This guide explains how to build standalone executables and installers for Whist
 
 ### Setting Up Environment
 
-#### macOS
+#### macOS (Environment)
+
 ```bash
 # Create virtual environment
 python3 -m venv .venv312
@@ -69,7 +82,8 @@ pip install -r requirements.txt
 pip install pyinstaller Pillow
 ```
 
-#### Windows
+#### Windows (Environment)
+
 ```cmd
 REM Create virtual environment
 py -m venv .venv312
@@ -87,6 +101,7 @@ pip install pyinstaller Pillow
 If you prefer to build manually or need to customize:
 
 1. **Generate icons:**
+
    ```bash
    cd assets
    python create_icon.py
@@ -94,6 +109,7 @@ If you prefer to build manually or need to customize:
    ```
 
 2. **Build with PyInstaller:**
+
    ```bash
    pyinstaller whistleblower.spec --clean
    ```
@@ -107,7 +123,7 @@ If you prefer to build manually or need to customize:
 The build is configured in `whistleblower.spec`:
 
 - **Entry point:** `tkinter_ui_refactored.py`
-- **Icons:** 
+- **Icons:**
   - macOS: `assets/icon.icns`
   - Windows: `assets/icon.ico`
 - **Bundle identifier:** `com.makeitworkok.whistleblower`
@@ -138,7 +154,8 @@ hiddenimports = [
 ## Build Output Structure
 
 ### macOS (.app bundle)
-```
+
+```text
 Whistleblower.app/
 ├── Contents/
 │   ├── Info.plist          # App metadata
@@ -147,8 +164,19 @@ Whistleblower.app/
 │   └── Resources/          # Icons, data files
 ```
 
+### macOS App Data Location
+
+When running the packaged app, all writable data goes to:
+
+- `~/Library/Application Support/Whistleblower/` (contains `sites/` templates and `data/` captures)
+
+The app writes a launch log to:
+
+- `~/whistleblower_launch.log`
+
 ### Windows (folder)
-```
+
+```text
 Whistleblower/
 ├── Whistleblower.exe       # Main executable
 ├── _internal/              # Dependencies and libraries
@@ -160,22 +188,26 @@ Whistleblower/
 ## Size Optimization
 
 Current build sizes (approximate):
+
 - macOS .app: ~150-200 MB
 - Windows folder: ~180-230 MB
 
 To reduce size further:
 
 1. **Remove unused modules** in `whistleblower.spec`:
+
    ```python
    excludes=['module_name']
    ```
 
 2. **Use UPX compression** (already enabled):
+
    ```python
    upx=True
    ```
 
 3. **Strip debug symbols** (configure in spec):
+
    ```python
    strip=True
    ```
@@ -185,6 +217,7 @@ To reduce size further:
 ### Build Fails with "Module not found"
 
 Add missing module to `hiddenimports` in `whistleblower.spec`:
+
 ```python
 hiddenimports = [
     # ... existing imports ...
@@ -196,19 +229,28 @@ hiddenimports = [
 
 1. Check build logs: `build/whistleblower/warn-whistleblower.txt`
 2. Test with console enabled:
+
    ```python
    console=True  # in whistleblower.spec
    ```
+
 3. Rebuild: `pyinstaller whistleblower.spec --clean`
+
+If the app quits immediately when launched from Finder, check:
+
+- Launch log: `~/whistleblower_launch.log`
+- App data dir: `~/Library/Application Support/Whistleblower/`
 
 ### "Developer cannot be verified" (macOS)
 
 This is normal for unsigned apps. Users can:
+
 1. Right-click the app
 2. Select "Open"
 3. Click "Open" in the dialog
 
 For distribution, consider code signing:
+
 ```bash
 codesign --force --deep --sign "Developer ID" Whistleblower.app
 ```
@@ -221,43 +263,50 @@ codesign --force --deep --sign "Developer ID" Whistleblower.app
 
 ## Distribution
 
-### macOS
+### macOS (Distribution)
 
-**Option 1: DMG Installer** (Recommended)
+#### Option 1: DMG Installer (Recommended)
+
 - Run `./create-dmg.sh`
 - Distribute: `dist/Whistleblower-macOS-v1.0.0.dmg`
 - Users drag app to Applications folder
 
-**Option 2: ZIP Archive**
+#### Option 2: ZIP Archive
+
 ```bash
 cd dist
 zip -r Whistleblower-macOS.zip Whistleblower.app
 ```
 
-### Windows
+### Windows (Distribution)
 
-**Option 1: ZIP Archive** (Recommended)
+#### Option 1: ZIP Archive (Recommended)
+
 - Run `create-installer.bat`
 - Distribute: `dist/Whistleblower-Windows-v1.0.0.zip`
 - Users extract and run
 
-**Option 2: Installer (Advanced)**
+#### Option 2: Installer (Advanced)
+
 - Use Inno Setup or NSIS
 - Create proper Windows installer with Start Menu shortcuts
 
 ## Code Signing (Optional)
 
-### macOS
+### macOS (Code Signing)
 
 1. Get Developer ID certificate from Apple
 2. Sign the app:
+
    ```bash
    codesign --force --deep --sign "Developer ID Application: Your Name" \
        --options runtime \
        --entitlements entitlements.plist \
        Whistleblower.app
    ```
+
 3. Notarize for Gatekeeper:
+
    ```bash
    xcrun notarytool submit Whistleblower.dmg \
        --apple-id your@email.com \
@@ -265,19 +314,25 @@ zip -r Whistleblower-macOS.zip Whistleblower.app
        --team-id TEAM_ID
    ```
 
-### Windows
+
+### Windows (Code Signing)
 
 1. Get code signing certificate
 2. Sign the executable:
+
+   
    ```cmd
    signtool sign /f certificate.pfx /p password /t http://timestamp.digicert.com Whistleblower.exe
    ```
+   
+
 
 ## Automated Builds
 
 ### GitHub Actions (CI/CD)
 
 Create `.github/workflows/build.yml`:
+
 ```yaml
 name: Build Executables
 
@@ -319,6 +374,7 @@ jobs:
 ## Version Management
 
 Update version in these files:
+
 1. `whistleblower.spec` - `version='X.X.X'`
 2. `build-macos.sh` - `VERSION="X.X.X"`
 3. `build-windows-exe.bat` - `set VERSION=X.X.X`
@@ -328,8 +384,9 @@ Update version in these files:
 ## Support
 
 For build issues:
+
 - Check logs in `build/whistleblower/`
-- Review PyInstaller docs: https://pyinstaller.org
+- Review PyInstaller docs: <https://pyinstaller.org>
 - Open an issue on GitHub
 
 ## License

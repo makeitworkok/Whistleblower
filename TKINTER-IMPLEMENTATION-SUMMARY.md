@@ -20,7 +20,7 @@ Refactored the architecture to use direct function imports with threading instea
 
 ## Files Created
 
-### 1. `tkinter_ui.py` (New)
+### 1. `tkinter_ui_refactored.py` (New)
 
 - Complete Tkinter desktop UI with tabs for Bootstrap and Capture
 - Browser selection dropdown (Chromium/Edge, Firefox, WebKit)
@@ -115,7 +115,7 @@ def run_capture(
 Flask Web Server (localhost:8787)
   └─> HTTP Request (/bootstrap)
        └─> subprocess.Popen(["python", "bootstrap_recorder.py", ...])
-            └─> Selenium Browser [FAILS in PyInstaller]
+            └─> Playwright Browser [FAILS in PyInstaller]
 ```
 
 **Problems:**

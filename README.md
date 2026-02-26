@@ -30,7 +30,7 @@ Just local artifacts and receipts.
   - Full-page screenshots
   - Visible DOM text + key element states (via CSS selectors you define)
 - Stores timestamped artifacts locally for manual review or future comparison
-- Includes optional post-capture analysis (`analyze_capture.py`) and a local control UI (`ui_app.py`)
+- Includes optional post-capture analysis (`analyze_capture.py`) and a local desktop UI (`tkinter_ui_refactored.py`)
 
 Intentionally **read-only** and **vendor-agnostic**. Works on whatever crap UI the system exposes via browser.
 
@@ -61,6 +61,7 @@ Whistleblower is intended to be read-only. Configure the BAS account it uses wit
 ### Windows Executable (Easiest)
 
 **Don't want to install Python?** Download the Windows executable:
+
 - No Python installation required
 - Download, extract, and run
 - Includes all dependencies bundled
@@ -77,6 +78,7 @@ Whistleblower is intended to be read-only. Configure the BAS account it uses wit
 ## 🏢 Supported BAS Vendors & Systems
 
 Whistleblower includes **vendor-specific templates** to simplify setup. Each template includes:
+
 - Pre-configured login selectors for that vendor
 - Typical page paths and navigation patterns
 - Documentation and examples
@@ -84,7 +86,7 @@ Whistleblower includes **vendor-specific templates** to simplify setup. Each tem
 ### Templates Registry
 
 | Vendor | System | Template | Status | Notes |
-|--------|--------|----------|--------|-------|
+| ------ | ------ | -------- | ------ | ----- |
 | **Tridium** | Niagara (N4) | `niagara.template.json` | ✅ Tested | 2-step multi-page login, .px dashboards |
 | **Trane** | Tracer Synchrony | `trane-tracer-synchrony.template.json` | ✅ Tested | /hui/* pages, hash routing |
 | **Generic** | React/SPA (URL routing) | `react-url-based.template.json` | ✅ Tested | Hash-routed navigation |
@@ -98,16 +100,17 @@ Whistleblower includes **vendor-specific templates** to simplify setup. Each tem
 
 ## 🗂️ Repository layout
 
-```
+```text
 Whistleblower/
 ├── requirements.txt
 ├── whistleblower.py          # Main capture runner (Playwright automation)
 ├── bootstrap_recorder.py     # Records operator flow, generates starter config + steps
 ├── analyze_capture.py        # Optional LLM analysis for captured runs
-├── ui_app.py                 # Local web UI (bootstrap/capture/schedule/analysis)
+├── tkinter_ui_refactored.py  # Local desktop UI (bootstrap/capture/schedule/analysis)
+├── ui_app.py                 # Legacy local web UI (Flask)
 ├── sites/
-│   ├── README.md             # 📖 Template & config guide
-│   ├── templates-registry.json # 📋 All vendor profiles
+│   ├── README.md             # Template & config guide
+│   ├── templates-registry.json # All vendor profiles
 │   ├── niagara.template.json # Niagara/Tridium template
 │   ├── trane-tracer-synchrony.template.json
 │   ├── react-*.template.json # Generic SPA templates
@@ -117,12 +120,13 @@ Whistleblower/
 ├── docs/
 │   ├── ROADMAP.md
 │   └── CHANGELOG.md
+├── BUILD-GUIDE.md            # macOS + Windows build guide
 ├── README.md
 └── LICENSE                   # MIT
 ```
 
-- `sites/` → per-site JSON configs (URLs, creds, login selectors, pages to hit)
-- `data/` → where the goods land (don't commit this)
+- `sites/` -> per-site JSON configs (URLs, creds, login selectors, pages to hit)
+- `data/` -> where the goods land (don't commit this)
 
 ---
 
@@ -131,11 +135,10 @@ Whistleblower/
 ### Option 1: Windows Executable (No Python Required)
 
 1. Download the Whistleblower Windows package from the releases page
-2. Extract the ZIP file to your desired location
-3. Run `install-browsers.bat` (first time only - downloads Chromium)
-4. Run `start-whistleblower.bat` or double-click `Whistleblower.exe`
-5. Your browser will open to http://127.0.0.1:8787
-6. Use the web UI to configure and run captures
+1. Extract the ZIP file to your desired location
+1. Run `install-browsers.bat` (first time only - downloads Chromium)
+1. Double-click `Whistleblower.exe`
+1. Use the desktop UI to configure and run captures
 
 See `dist/Whistleblower/README.txt` in the Windows build for full details.
 
@@ -148,53 +151,55 @@ See `dist/Whistleblower/README.txt` in the Windows build for full details.
    cd Whistleblower
    ```
 
-2. Make an output dir (if not already there)
+1. Make an output dir (if not already there)
 
    ```bash
    mkdir -p data
    ```
 
-3. Install dependencies (first time only)
+1. Install dependencies (first time only)
 
    ```bash
    python3 -m pip install -r requirements.txt
    python3 -m playwright install chromium
    ```
 
-4. Set up your private config (never commit this!)
+1. Set up your private config (never commit this!)
 
    **Option A: Use a vendor template** (if your system is in the registry)
-   
+
    Check `sites/templates-registry.json` to find your BAS vendor:
+
    ```bash
    # For Niagara systems:
    cp sites/niagara.template.json sites/my-niagara-site.json
-   
+
    # For Trane Tracer Synchrony:
    cp sites/trane-tracer-synchrony.template.json sites/my-trane-site.json
-   
+
    # For custom/unknown systems:
    cp sites/example.json sites/my-site.json
    ```
 
    **Option B: Auto-discover selectors** (recommended for first-time setup)
-   
+
    ```bash
    python3 bootstrap_recorder.py --url https://your-system.local --site-name my-site
    ```
-   
+
    This launches an interactive browser where you log in manually. It discovers:
+
    - Login form selectors
    - Navigation paths
    - UI element states
-   
+
    Output: `sites/my-site.bootstrap.json` (ready to test)
 
-   Then edit `sites/my-site.json` with your real URL, username/password, login selectors, and pages/selectors. 
-   
-   📖 See `sites/README.md` for detailed template documentation and examples.
+   Then edit `sites/my-site.json` with your real URL, username/password, login selectors, and pages/selectors.
 
-5. Run it
+   See [sites/README.md](sites/README.md) for detailed template documentation and examples.
+
+1. Run it
 
    **Linux/macOS/Windows (PowerShell/CMD):**
 
@@ -202,7 +207,9 @@ See `dist/Whistleblower/README.txt` in the Windows build for full details.
    python3 whistleblower.py --config sites/my-site.json
    ```
 
-6. Optional (debug only): record the full interaction as video
+   For macOS .app builds, see [BUILD-GUIDE.md](BUILD-GUIDE.md).
+
+1. Optional (debug only): record the full interaction as video
 
    ```bash
    python3 whistleblower.py --config sites/my-site.json --record-video
@@ -214,6 +221,7 @@ See `dist/Whistleblower/README.txt` in the Windows build for full details.
    For normal scheduled/routine capture, leave `--record-video` off.
 
 ---
+
 ## 🧪 Testing Your Configuration
 
 Before deploying, validate your configuration and test on your system:
@@ -230,11 +238,13 @@ Both scripts auto-discover all `sites/*.json` files and report results. Add new 
 
 👉 **[See docs/TESTING.md](docs/TESTING.md) for detailed testing guide and troubleshooting.**
 
----## � Multi-Step Login Support
+---
+
+## Multi-Step Login Support
 
 Some BAS systems (like Niagara) require **login across multiple pages**:
 
-```
+```text
 Step 1: /prelogin → Enter username → Submit
          ↓
 Step 2: /login → Enter password → Submit
@@ -243,6 +253,7 @@ Success → Dashboard
 ```
 
 Whistleblower **automatically detects and handles** multi-step logins:
+
 - Detects when only username field is visible
 - Fills username, submits, waits for password page
 - Detects when password field appears
@@ -255,9 +266,9 @@ If you have a system with unusual login flow (OAuth, MFA, etc.), use `bootstrap_
 
 ---
 
-## �🖥️ Local UI (recommended for non-devs)
+## Local Desktop UI (recommended for non-devs)
 
-Run the local web UI to manage bootstrap recording, captures, schedules, and analysis.
+Run the local desktop UI to manage bootstrap recording, captures, schedules, and analysis.
 
 Install local dependencies first:
 
@@ -269,13 +280,11 @@ python3 -m playwright install chromium
 Then start the UI:
 
 ```bash
-python3 ui_app.py
+python3 tkinter_ui_refactored.py
 ```
 
-Then open:
-`http://127.0.0.1:8787`
-
 What the UI provides:
+
 - Bootstrap recorder (build a starter config and suggested steps)
 - Main capture (run once)
 - Scheduled capture (run every N minutes)
@@ -285,9 +294,10 @@ What the UI provides:
 ### Analysis API key
 
 Analysis requires an API key. You can:
+
 - Set `OPENAI_API_KEY` or `XAI_API_KEY` in your environment
-- Or place it in `.private/openai.env`
-- Or paste it into the UI before running analysis
+- Paste it into the UI (saved to `~/.whistleblower_env`)
+- Or place it in `.private/openai.env` (CLI-only)
 
 ---
 
@@ -295,7 +305,7 @@ Analysis requires an API key. You can:
 
 After a successful run:
 
-```
+```text
 data/
 └── my-site/                  # From "site_name" in your config
     └── 20260210-161200/      # Timestamp of run
@@ -325,15 +335,10 @@ Key fields you'll need:
 - `login`: Credentials + selectors:
   - `username` / `password` (or env placeholders like `${MY_SITE_USERNAME}`)
   - `user_selector`, `pass_selector`, `submit_selector`, `success_selector`
-- `watch`: Array of capture targets. Each target supports:
-  - `name`, `url`, `root_selector`
-  - `settle_ms`
-  - `screenshot_full_page` or `screenshot_selector`
-   - optional `pre_click_selector`, `pre_click_wait_ms`, `pre_click_steps`
-   - optional `prefer_url_on_pre_click_change` (default `true`)
+- `watch`: Array of capture targets. Each target supports `name`, `url`, `root_selector`, `settle_ms`, `screenshot_full_page` or `screenshot_selector`, optional `pre_click_selector`, `pre_click_wait_ms`, `pre_click_steps`, and optional `prefer_url_on_pre_click_change` (default `true`).
 
-**Working with ReactJS/SPAs:** Navigation selectors can be volatile in single-page applications. 
-See [docs/REACTJS-GUIDE.md](docs/REACTJS-GUIDE.md) for strategies on stable selectors, handling 
+**Working with ReactJS/SPAs:** Navigation selectors can be volatile in single-page applications.
+See [docs/REACTJS-GUIDE.md](docs/REACTJS-GUIDE.md) for strategies on stable selectors, handling
 loading states, and dealing with hash-based routing.
 
 BAS UIs vary wildly—some need delays, some have iframes, some throw modals. Tweak selectors and add waits in code as needed for your target.
@@ -399,7 +404,7 @@ actual login/navigation flow.
 
 ---
 
-## 🧪 Current Status
+## Current Status
 
 Alpha, but beyond capture-only MVP.
 
@@ -407,7 +412,7 @@ Implemented and in active use:
 
 - Read-only capture pipeline (`whistleblower.py`) with per-target artifacts
 - Bootstrap flow recorder (`bootstrap_recorder.py`) for starter configs and click-step generation
-- Local operations UI (`ui_app.py`) for bootstrap, one-off capture, scheduling, and analysis
+- Local desktop UI (`tkinter_ui_refactored.py`) for bootstrap, one-off capture, scheduling, and analysis
 - Post-capture LLM analysis (`analyze_capture.py`) with:
   - OpenAI or xAI/Grok providers
   - Combined run analysis or per-page analysis
@@ -430,7 +435,7 @@ Mark this complete before cutting `v0.1.0-alpha`:
 - [ ] `readiness_error` is `null` for baseline demo targets.
 - [x] `bootstrap_recorder.py` generates `*.bootstrap.json` and `*.steps.json`.
 - [x] `analyze_capture.py` emits `analysis.md`, `analysis.json`, and `analysis_summary.json`.
-- [x] `ui_app.py` supports bootstrap, one-off capture, scheduling, and analysis.
+- [x] `tkinter_ui_refactored.py` supports bootstrap, one-off capture, scheduling, and analysis.
 - [x] Private secrets are not committed (`sites/*.local.json`, `.private/*` ignored).
 - [x] README quick start and config schema match real CLI behavior.
 
@@ -469,25 +474,25 @@ Provider options:
 
    `analyze_capture.py` auto-loads `.private/openai.env`.
 
-2. Analyze the latest run for a site (OpenAI default):
+1. Analyze the latest run for a site (OpenAI default):
 
    ```bash
    python3 analyze_capture.py --site ignition_demo
    ```
 
-3. Analyze the latest run for a site with Grok/xAI:
+1. Analyze the latest run for a site with Grok/xAI:
 
    ```bash
    python3 analyze_capture.py --provider grok --site ignition_demo
    ```
 
-4. Analyze an explicit run directory:
+1. Analyze an explicit run directory:
 
    ```bash
    python3 analyze_capture.py --run-dir data/ignition_demo/20260212-174539
    ```
 
-5. Analyze a UTC time window across runs (optionally scoped by `--site`):
+1. Analyze a UTC time window across runs (optionally scoped by `--site`):
 
    ```bash
    python3 analyze_capture.py \
@@ -496,29 +501,35 @@ Provider options:
      --end-utc 2026-02-19T23:59:59Z
    ```
 
-6. Force per-page output instead of a combined run summary:
+1. Force per-page output instead of a combined run summary:
 
    ```bash
    python3 analyze_capture.py --site ignition_demo --per-page
    ```
 
 Outputs are written next to each target:
+
 - `analysis.md` (human-readable findings)
 - `analysis.json` (structured metadata)
 
 And one run-level file:
+
 - `analysis_summary.json`
 
 ---
 
-## � Additional Documentation
+## Additional Documentation
 
-### React/SPA Frontend Support- **[docs/REACT-DOCS-MAP.md](docs/REACT-DOCS-MAP.md)** - 🗺️ **START HERE** - Navigation guide for React documentation- **[docs/REACTJS-GUIDE.md](docs/REACTJS-GUIDE.md)** - Comprehensive guide for React, Vue, Angular, and SPA frontends
+### React/SPA Frontend Support
+
+- **[docs/REACT-DOCS-MAP.md](docs/REACT-DOCS-MAP.md)** - START HERE - Navigation guide for React documentation
+- **[docs/REACTJS-GUIDE.md](docs/REACTJS-GUIDE.md)** - Comprehensive guide for React, Vue, Angular, and SPA frontends
 - **[docs/REACT-QUICK-REF.md](docs/REACT-QUICK-REF.md)** - Quick reference with copy-paste config patterns
 - **[docs/REACT-TROUBLESHOOTING.md](docs/REACT-TROUBLESHOOTING.md)** - Step-by-step troubleshooting checklist
 - **[sites/ignition_perspective_annotated.example.json](sites/ignition_perspective_annotated.example.json)** - Annotated real-world example
 
 ### Project Documentation
+
 - **[docs/TESTING.md](docs/TESTING.md)** - Testing guide: how to run test_configs.py and test_functional.py, add tests for new sites
 - **[docs/TEMPLATES.md](docs/TEMPLATES.md)** - Complete template system documentation and vendor support
 - [sites/README.md](sites/README.md) - Site configuration quick-start and credential management
@@ -528,7 +539,7 @@ And one run-level file:
 
 ---
 
-## �📜 License
+## License
 
 Whistleblower is released under the **MIT License**.
 

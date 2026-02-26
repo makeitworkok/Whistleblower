@@ -97,13 +97,11 @@ a = Analysis(
         
         # Development/testing tools
         'pytest',
-        'unittest',
         'doctest',
         'pdb',
         'pydoc',
         
         # Other unused modules
-        'email',
         'ftplib',
         'telnetlib',
         'xmlrpc',

@@ -62,10 +62,27 @@ Whistleblower is intended to be read-only. Configure the BAS account it uses wit
 
 **Don't want to install Python?** Download the Windows executable:
 
-- No Python installation required
-- Download, extract, and run
-- Includes all dependencies bundled
-- See the `windows-exe` branch for builds
+**[📥 Download Windows Installer (v1.0.0)](https://github.com/makeitworkok/Whistleblower/releases/latest/download/Whistleblower-Windows-Installer.zip)** (47 MB)
+
+#### Quick Start:
+1. Download and extract the ZIP file
+2. Navigate to the `Whistleblower` folder
+3. Double-click `Whistleblower.exe` to launch
+
+#### ⚠️ Running Unsigned Executables (First Time)
+Since this is an educational project, the executable is **not code-signed**. Windows will show a security warning:
+
+**When you see "Windows protected your PC":**
+1. Click **"More info"**
+2. Click **"Run anyway"**
+
+This is normal for unsigned executables. The app is safe and open-source—feel free to review the code!
+
+**What's included:**
+- ✅ No Python installation required
+- ✅ All dependencies bundled (Playwright, Tkinter, etc.)
+- ✅ Fully portable—runs from any folder
+- ✅ Works on Windows 10/11
 
 ### From Source
 

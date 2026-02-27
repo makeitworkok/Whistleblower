@@ -156,6 +156,19 @@ For reliable operations, use this routine:
 - Check provider availability and billing status
 - Re-run analysis on a completed capture folder
 
+### Windows: "BrowserType.launch doesn't exist" error
+
+**This occurs when browsers haven't been installed yet.**
+
+**Solution:**
+1. Close Whistleblower if it's running
+2. Navigate to the Whistleblower folder (where you extracted the ZIP)
+3. Double-click `install-browsers.bat`
+4. Wait for Microsoft Edge browser to download (~130 MB)
+5. Once complete, launch Whistleblower.exe again
+
+**This only needs to be done once.** The browser files are stored in the `playwright_browsers` folder next to the executable.
+
 ## 8) Safety and Access Guidelines
 
 - Use read-only BAS credentials only

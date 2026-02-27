@@ -27,6 +27,7 @@ echo [2/4] Copying files...
 xcopy /E /I /Y "dist\Whistleblower" "%TEMP_DIR%\Whistleblower"
 copy /Y "README.md" "%TEMP_DIR%\"
 copy /Y "LICENSE" "%TEMP_DIR%\"
+copy /Y "install-browsers.bat" "%TEMP_DIR%\Whistleblower\"
 
 REM Create a simple launcher batch file
 echo @echo off > "%TEMP_DIR%\Start-Whistleblower.bat"

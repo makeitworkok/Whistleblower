@@ -78,10 +78,11 @@ python3 bootstrap_recorder.py --url https://your-system.local --site-name my-ven
 3. **Based on patterns, pick closest template or tune bootstrap config**
 
 4. **Rename and activate**
-   ```bash
-   mv sites/my-vendor.bootstrap.json sites/my-vendor.json
-   python3 whistleblower.py --config sites/my-vendor.json
-   ```
+
+```bash
+mv sites/my-vendor.bootstrap.json sites/my-vendor.json
+python3 whistleblower.py --config sites/my-vendor.json
+```
 
 ---
 
@@ -204,7 +205,7 @@ python3 whistleblower.py --config sites/my-site.json
 
 Create `.private/niagara.env`:
 
-```
+```bash
 NIAGARA_USERNAME=ReadOnly
 NIAGARA_PASSWORD=SecurePassword
 ```

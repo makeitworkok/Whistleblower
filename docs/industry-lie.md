@@ -1,4 +1,4 @@
-# 🚨 The Building Automation Industry Is Built on a Lie
+# 🚨 It's a Lie
 
 And it's time someone said it out loud.
 

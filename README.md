@@ -62,6 +62,9 @@ To get AI-powered analysis of your captures (detects anomalies, reads values, id
 
 **📖 New to APIs?** See our [**API Key Guide**](docs/CLI-GUIDE.md#analysis-api-setup) for step-by-step instructions with screenshots.
 
+![Whistleblower Setup Tab](assets/ui-setup-tab.png)
+*Configure your API keys and settings in the Setup tab*
+
 ---
 
 ## What Whistleblower Does
@@ -80,6 +83,9 @@ To get AI-powered analysis of your captures (detects anomalies, reads values, id
 - Detects anomalies and unusual states
 - Identifies potential issues
 - Creates easy-to-read reports
+
+![AI Analysis Report Example](assets/analysis-report-example.png)
+*Example AI analysis report showing loading status and potential issues*
 
 **What it does NOT do:**
 

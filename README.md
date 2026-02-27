@@ -2,11 +2,11 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/Python-3.12%2B-blue.svg)](https://www.python.org/)
-[![Status](https://img.shields.io/badge/Status-Stable-brightgreen.svg)](#current-status)
+[![Status](https://img.shields.io/badge/Status-Stable-brightgreen.svg)](#-quick-start)
 
 > **Read-only evidence capture for any web-based control system.**
 
-Whistleblower automatically logs into your building automation system (BAS), SCADA, or any web dashboard, captures screenshots and data, and saves timestamped evidence locally. 
+Whistleblower automatically logs into your building automation system (BAS), SCADA, or any web dashboard, captures screenshots and data, and saves timestamped evidence locally.
 
 **Perfect for:** Documenting what operators actually see, catching UI inconsistencies, and creating audit trails.
 
@@ -21,17 +21,20 @@ Whistleblower automatically logs into your building automation system (BAS), SCA
 **Download the desktop application** - No Python or coding required!
 
 #### Windows
+
 1. **[📥 Download Whistleblower for Windows](https://github.com/makeitworkok/Whistleblower/releases/latest)** (47 MB)
 2. Extract the ZIP file
 3. Double-click `Whistleblower.exe`
 4. Click "More info" → "Run anyway" if Windows warns you (this is normal for unsigned apps)
 
 #### macOS
+
 1. **[📥 Download Whistleblower for macOS](https://github.com/makeitworkok/Whistleblower/releases/latest)** (50 MB)
 2. Open the DMG file and drag to Applications
 3. Right-click the app → "Open" → "Open" again (first time only)
 
 **What you'll be able to do:**
+
 - ✅ Record login flows to your system (Bootstrap)
 - ✅ Capture screenshots and data automatically
 - ✅ Schedule regular captures (every 15 minutes, hourly, etc.)
@@ -64,6 +67,7 @@ To get AI-powered analysis of your captures (detects anomalies, reads values, id
 ## What Whistleblower Does
 
 **Captures Evidence:**
+
 - Automatically logs into your BAS/SCADA web interface
 - Navigates to your dashboards and graphics
 - Takes full-page screenshots
@@ -71,12 +75,14 @@ To get AI-powered analysis of your captures (detects anomalies, reads values, id
 - Saves everything locally with timestamps
 
 **AI Analysis (with API key):**
+
 - Reads sensor values from screenshots
 - Detects anomalies and unusual states
 - Identifies potential issues
 - Creates easy-to-read reports
 
 **What it does NOT do:**
+
 - ❌ No setpoint changes or control actions (100% read-only)
 - ❌ No vendor-specific protocols or APIs
 - ❌ No cloud storage (everything stays local)
@@ -89,7 +95,7 @@ To get AI-powered analysis of your captures (detects anomalies, reads values, id
 Whistleblower works with **any web-based control system**. We provide ready-to-use templates for:
 
 | Vendor | System | Status |
-|--------|--------|--------|
+| -------- | -------- | -------- |
 | **Tridium** | Niagara (N4) | ✅ Tested |
 | **Trane** | Tracer Synchrony | ✅ Tested |
 | **Generic** | React/SPA Systems | ✅ Tested |
@@ -141,7 +147,7 @@ python3 whistleblower.py --config sites/example.json
 
 After each run, you'll find timestamped folders with all the evidence:
 
-```
+```text
 data/
 └── my-building/
     └── 20260220-143000/          # Timestamp: Feb 20, 2026 at 2:30 PM
@@ -171,17 +177,20 @@ Everything stays on your computer. Nothing is uploaded unless you explicitly run
 ## 📚 Documentation
 
 ### Getting Started
+
 - **[Desktop App User Guide](TKINTER-BUILD-GUIDE.md)** - Using the Windows/macOS applications
 - **[Configuration Guide](sites/README.md)** - Setting up your first system
 - **[Supported Systems](sites/README.md#supported-vendors)** - Vendor templates and examples
 
 ### Advanced Topics
+
 - **[CLI Guide](docs/CLI-GUIDE.md)** - Command-line usage and automation
 - **[React/SPA Systems](docs/REACTJS-GUIDE.md)** - Modern web frameworks (React, Vue, Angular)
 - **[Testing & Validation](docs/TESTING.md)** - Test configs before deployment
 - **[Build from Source](BUILD-GUIDE.md)** - Create your own executables
 
 ### Reference
+
 - **[Roadmap](docs/ROADMAP.md)** - Planned features and improvements
 - **[Changelog](docs/CHANGELOG.md)** - Version history
 - **[Release Notes](RELEASE_NOTES_v1.0.0.md)** - v1.0.0 details

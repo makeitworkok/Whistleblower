@@ -63,17 +63,21 @@ Whistleblower is intended to be read-only. Configure the BAS account it uses wit
 **Don't want to install Python?** Download the pre-built application for your platform:
 
 #### Windows
+
 **[📥 Download for Windows (v1.0.0)](https://github.com/makeitworkok/Whistleblower/releases/latest/download/Whistleblower-Windows-Installer.zip)** (47 MB)
 
 **Quick Start:**
+
 1. Download and extract the ZIP file
 2. Navigate to the `Whistleblower` folder
 3. Double-click `Whistleblower.exe` to launch
 
 #### macOS
+
 **[📥 Download for macOS (v1.0.0)](https://github.com/makeitworkok/Whistleblower/releases/latest/download/Whistleblower-macOS-v1.0.0.dmg)** (~50 MB)
 
 **Quick Start:**
+
 1. Download and open the DMG file
 2. Drag `Whistleblower.app` to your Applications folder
 3. Launch from Applications or double-click the app
@@ -83,10 +87,12 @@ Whistleblower is intended to be read-only. Configure the BAS account it uses wit
 Since this is an educational project, the applications are **not code-signed**.
 
 **Windows** - "Windows protected your PC":
+
 1. Click **"More info"**
 2. Click **"Run anyway"**
 
 **macOS** - "Cannot be opened because the developer cannot be verified":
+
 1. Right-click (or Control-click) the app
 2. Select **"Open"**
 3. Click **"Open"** in the dialog
@@ -94,6 +100,7 @@ Since this is an educational project, the applications are **not code-signed**.
 This is normal for unsigned apps. The software is safe and open-source—feel free to review the code!
 
 **What's included:**
+
 - ✅ No Python installation required
 - ✅ All dependencies bundled (Playwright, Tkinter, etc.)
 - ✅ Fully portable—runs from any folder

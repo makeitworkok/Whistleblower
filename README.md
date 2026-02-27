@@ -12,6 +12,14 @@ Whistleblower automatically logs into your building automation system (BAS), SCA
 
 **100% Read-only.** No control actions, no vendor lock-in, no cloud required.
 
+## 💡 Why This Exists
+
+The building automation industry has a dirty secret: **the data everyone trusts is usually wrong**. Graphics lie, APIs hide problems, and expensive analytics platforms charge you to analyze corrupted data. Before you can optimize anything, you need to verify what operators actually see on their screens matches reality.
+
+**[Read the full rant: Why the industry is built on a lie →](docs/industry-lie.md)**
+
+Whistleblower is the integrity check that should come first—capturing the presentation layer truth before feeding anything to analytics, AI, or decision-making systems.
+
 ---
 
 ## 🚀 Quick Start

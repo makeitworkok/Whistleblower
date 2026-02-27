@@ -2,7 +2,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/Python-3.12%2B-blue.svg)](https://www.python.org/)
-[![Status](https://img.shields.io/badge/Status-Alpha-orange.svg)](#current-status)
+[![Status](https://img.shields.io/badge/Status-Stable-brightgreen.svg)](#current-status)
 
 > Read-only evidence capture for dashboards.
 
@@ -445,7 +445,7 @@ actual login/navigation flow.
 
 ## Current Status
 
-Alpha, but beyond capture-only MVP.
+Stable v1.0.0 release.
 
 Implemented and in active use:
 

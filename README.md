@@ -6,7 +6,7 @@
 
 > **Read-only evidence capture for any web-based control system.**
 
-Whistleblower automatically logs into your building automation system (BAS), SCADA, or any web dashboard, captures screenshots and data, and saves timestamped evidence locally.
+Whistleblower automatically logs into your building automation system (BAS), SCADA, or janky web dashboard, captures screenshots and data, and saves timestamped evidence locally.
 
 **Perfect for:** Documenting what operators actually see, catching UI inconsistencies, and creating audit trails.
 
@@ -14,9 +14,9 @@ Whistleblower automatically logs into your building automation system (BAS), SCA
 
 ## 💡 Why This Exists
 
-The building automation industry has a dirty secret: **the data everyone trusts is usually wrong**. Graphics lie, APIs hide problems, and expensive analytics platforms charge you to analyze corrupted data. Before you can optimize anything, you need to verify what operators actually see on their screens matches reality.
+A couple weeks ago, I about a quality assurance tool to ensure the data preseneted to my users was consistent and correct. I wanted to ensure that my project didn't fall into the dirty little secret: **the data everyone trusts is usually wrong**. Graphics lie, APIs hide problems, and expensive analytics platforms charge you to analyze corrupted data. Before you can optimize anything, you need to verify what operators actually see on their screens matches reality.
 
-**[Read the full rant: Why the industry is built on a lie →](docs/industry-lie.md)**
+**[Read my full rant: Are your graphics lying? →](docs/industry-lie.md)**
 
 Whistleblower is the integrity check that should come first—capturing the presentation layer truth before feeding anything to analytics, AI, or decision-making systems.
 
@@ -65,7 +65,7 @@ To get AI-powered analysis of your captures (detects anomalies, reads values, id
 2. **Alternative: xAI/Grok:**
    - Visit: **[https://console.x.ai/](https://console.x.ai/)**
    - Follow similar steps to get your API key
-   
+
 **Without an API key:** You can still capture screenshots and data - you just won't get automated analysis reports.
 
 **📖 New to APIs?** See our [**API Key Guide**](docs/CLI-GUIDE.md#analysis-api-setup) for step-by-step instructions with screenshots.

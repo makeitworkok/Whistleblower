@@ -42,11 +42,11 @@ Every API adds another coat of paint over the rot. Makes the lies shinier, harde
 So the industry trains AI on corrupted, stale, inconsistent, API-mangled data…  
 then charges owners to look at prettier versions of the same bullshit. 💸
 
-## 🗑️ Garbage in → API garbage out → polished garbage out → 💰 quarterly subscription.
+## 🗑️ Garbage in → API garbage out → polished turd → 💰 quarterly subscription.
 
 Before you spend one more dollar on "predictive analytics" or "AI optimization," someone has to pull the fire alarm:
 
-## 🔥 **The presentation layer is lying to you—and the APIs are helping cover it up.**
+## 🔥 **The presentation layer is lying to you—and the APIs are hiding the body.**
 
 Not the protocol. ❌  
 Not the controller. ❌  
@@ -67,8 +67,9 @@ rules, models, reports, decisions, energy savings claims, invoices.
 ❌ If no → go find the fire. 🔥  
 ✅ If yes → then maybe the data is safe to analyze.
 
-Until that integrity check comes first, the rest is just expensive theater. 🎭  
-A multi-million-dollar circle-jerk where vendors sell polished lies back to owners too busy to notice the building is bleeding money. 💸🩸
+Until that integrity check comes first, the rest is just expensive kabuki theater. 🎭  
+
+A multi-million-dollar circle-jerk where vendors sell polished turds back to owners too busy to notice the building is bleeding money. 💸🩸
 
 ## 🚨 Fire alarm is ringing.
 

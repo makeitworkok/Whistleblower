@@ -14,7 +14,7 @@ Whistleblower automatically logs into your building automation system (BAS), SCA
 
 ## 💡 Why This Exists
 
-A couple weeks ago, I about a quality assurance tool to ensure the data preseneted to my users was consistent and correct. I wanted to ensure that my project didn't fall into the dirty little secret: **the data everyone trusts is usually wrong**. Graphics lie, APIs hide problems, and expensive analytics platforms charge you to analyze corrupted data. Before you can optimize anything, you need to verify what operators actually see on their screens matches reality.
+A couple weeks ago, I thought about a quality assurance tool to ensure the data preseneted to my users was consistent and correct. I wanted to ensure that my project didn't fall into the trap of the industry's dirty little secret: **the data everyone trusts is usually wrong**. Graphics lie, APIs hide problems, and expensive analytics platforms charge you to analyze corrupted data. Before you can optimize anything, you need to verify what operators actually see on their screens matches reality.
 
 **[Read my full rant: Are your graphics lying? →](docs/industry-lie.md)**
 

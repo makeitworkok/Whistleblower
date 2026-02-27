@@ -196,6 +196,8 @@ Everything stays on your computer. Nothing is uploaded unless you explicitly run
 
 **Read-Only Access:** Configure your BAS account with **read-only permissions only**. Never give Whistleblower control or override rights.
 
+**Stop Recording Correctly:** Always use the app's Stop Capture button to end a recording. Do not close the browser window directly, as this can produce incomplete or corrupted output. See [User Manual](docs/USER-MANUAL.md#stop-recording-correctly) for details.
+
 **Unsigned Applications:** The desktop apps are not code-signed (this is an open-source educational project). Your OS will warn you the first time - this is normal and safe.
 
 **API Costs:** If using AI analysis, OpenAI charges ~$0.01-0.05 per screenshot. Monitor your usage at [platform.openai.com](https://platform.openai.com/).
@@ -206,6 +208,7 @@ Everything stays on your computer. Nothing is uploaded unless you explicitly run
 
 ### Getting Started
 
+- **[User Manual](docs/USER-MANUAL.md)** - Step-by-step what to do after launching the app
 - **[Desktop App User Guide](TKINTER-BUILD-GUIDE.md)** - Using the Windows/macOS applications
 - **[Configuration Guide](sites/README.md)** - Setting up your first system
 - **[Supported Systems](sites/README.md#supported-vendors)** - Vendor templates and examples

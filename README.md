@@ -87,6 +87,20 @@ To get AI-powered analysis of your captures (detects anomalies, reads values, id
 ![AI Analysis Report Example](assets/analysis-report-example.png)
 *Example AI analysis report showing loading status and potential issues*
 
+**🎭 AI Analysis Personalities (Advanced):**
+
+Get specialized analysis from different professional perspectives! Enable one or more "personalities" to analyze your captures:
+
+- **BoilerBob (Mechanical Authority)** - Examines mechanical equipment, pumps, boilers, chillers, and system status
+- **ConservationCasey (Energy Specialist)** - Identifies energy waste, inefficiencies, and cost-saving opportunities
+- **DirectorDave (ROI Strategist)** - Develops ROI models, calculates payback periods, and prioritizes improvements
+- **GraphicalGary (UI Standards)** - Reviews interface consistency, usability, and graphical standards compliance
+
+![Whistleblower Analysis Personalities](assets/wb%20personalities.png)
+*Enable specialist AI personalities for targeted analysis of your building systems*
+
+You can also ask custom questions like "What's the supply air temperature trend?" or "Are any pumps running in alarm?"
+
 **What it does NOT do:**
 
 - ❌ No setpoint changes or control actions (100% read-only)

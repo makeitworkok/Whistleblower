@@ -468,10 +468,10 @@ Current focus:
 
 Mark this complete before cutting `v0.1.0-alpha`:
 
-- [ ] Local setup succeeds on a clean machine (`pip install -r requirements.txt` and `playwright install chromium`).
-- [ ] At least 2 representative site configs run successfully (default run, no video).
-- [ ] Each run writes `screenshot.png`, `dom.json`, `meta.json` per target.
-- [ ] `readiness_error` is `null` for baseline demo targets.
+- [x] Local setup succeeds on a clean machine (`pip install -r requirements.txt` and `playwright install chromium`).
+- [x] At least 2 representative site configs run successfully (default run, no video).
+- [x] Each run writes `screenshot.png`, `dom.json`, `meta.json` per target.
+- [x] `readiness_error` is `null` for baseline demo targets.
 - [x] `bootstrap_recorder.py` generates `*.bootstrap.json` and `*.steps.json`.
 - [x] `analyze_capture.py` emits `analysis.md`, `analysis.json`, and `analysis_summary.json`.
 - [x] `tkinter_ui_refactored.py` supports bootstrap, one-off capture, scheduling, and analysis.

@@ -4,577 +4,195 @@
 [![Python](https://img.shields.io/badge/Python-3.12%2B-blue.svg)](https://www.python.org/)
 [![Status](https://img.shields.io/badge/Status-Stable-brightgreen.svg)](#current-status)
 
-> Read-only evidence capture for dashboards.
+> **Read-only evidence capture for any web-based control system.**
 
-**Whistleblower** is a read-only watchdog for building automation systems (really any web-based control system).
+Whistleblower automatically logs into your building automation system (BAS), SCADA, or any web dashboard, captures screenshots and data, and saves timestamped evidence locally. 
 
-It logs into whatever web interface you've got (any BAS vendor, PLC, SCADA, janky custom system—doesn't matter), navigates the graphics/dashboards, and grabs what the operator actually sees: screenshots, DOM text, element states.
+**Perfect for:** Documenting what operators actually see, catching UI inconsistencies, and creating audit trails.
 
-The goal: catch when the pretty pictures lie about what's really happening in the building. No assumptions, no deep integrations—just evidence.
-
-No write access.  
-No drivers.  
-No vendor SDKs.  
-No cloud requirement for core capture.  
-No subscriptions.  
-
-Just local artifacts and receipts.
+**100% Read-only.** No control actions, no vendor lock-in, no cloud required.
 
 ---
 
-## ✅ What Whistleblower does (current MVP)
+## 🚀 Quick Start
 
-- Automates login to a BAS web UI using your provided credentials/selectors
-- Navigates to your configured pages (dashboards, graphics, trends, etc.)
-- Captures on each run:
-  - Full-page screenshots
-  - Visible DOM text + key element states (via CSS selectors you define)
-- Stores timestamped artifacts locally for manual review or future comparison
-- Includes optional post-capture analysis (`analyze_capture.py`) and a local desktop UI (`tkinter_ui_refactored.py`)
+### For Non-Technical Users (Recommended)
 
-Intentionally **read-only** and **vendor-agnostic**. Works on whatever crap UI the system exposes via browser.
-
----
-
-## 🚫 What it deliberately does NOT do
-
-- ❌ Setpoint changes or control actions
-- ❌ BACnet/Modbus/Lon protocol stacks
-- ❌ Vendor SDKs, proprietary APIs, or deep integrations
-- ❌ Automatic cloud telemetry or background phoning home
-- ❌ Automatic alerting (yet—coming after reliable capture)
-
-Optional analysis mode sends evidence to your chosen model provider only when you run it.
-
-If the graphics are bullshitting you, Whistleblower just documents the bullshit. What you do next is on you.
-
----
-
-## ⚠️ Read-only access disclaimer
-
-Whistleblower is intended to be read-only. Configure the BAS account it uses with **read-only permissions** only. Do not grant write, override, or operator control rights. You are responsible for ensuring the credentials and access level are safe for a monitoring-only tool.
-
----
-
-## 🧰 Requirements
-
-### Standalone Applications (No Python Required)
-
-**Don't want to install Python?** Download the pre-built application for your platform:
+**Download the desktop application** - No Python or coding required!
 
 #### Windows
-
-**[📥 Download for Windows (v1.0.0)](https://github.com/makeitworkok/Whistleblower/releases/latest/download/Whistleblower-Windows-Installer.zip)** (47 MB)
-
-**Quick Start:**
-
-1. Download and extract the ZIP file
-2. Navigate to the `Whistleblower` folder
-3. Double-click `Whistleblower.exe` to launch
+1. **[📥 Download Whistleblower for Windows](https://github.com/makeitworkok/Whistleblower/releases/latest)** (47 MB)
+2. Extract the ZIP file
+3. Double-click `Whistleblower.exe`
+4. Click "More info" → "Run anyway" if Windows warns you (this is normal for unsigned apps)
 
 #### macOS
+1. **[📥 Download Whistleblower for macOS](https://github.com/makeitworkok/Whistleblower/releases/latest)** (50 MB)
+2. Open the DMG file and drag to Applications
+3. Right-click the app → "Open" → "Open" again (first time only)
 
-**[📥 Download for macOS (v1.0.0)](https://github.com/makeitworkok/Whistleblower/releases/latest/download/Whistleblower-macOS-v1.0.0.dmg)** (~50 MB)
+**What you'll be able to do:**
+- ✅ Record login flows to your system (Bootstrap)
+- ✅ Capture screenshots and data automatically
+- ✅ Schedule regular captures (every 15 minutes, hourly, etc.)
+- ✅ Analyze captures with AI (requires API key - see below)
 
-**Quick Start:**
+### 🤖 AI Analysis (Optional but Recommended)
 
-1. Download and open the DMG file
-2. Drag `Whistleblower.app` to your Applications folder
-3. Launch from Applications or double-click the app
+To get AI-powered analysis of your captures (detects anomalies, reads values, identifies issues), you'll need an **API key** from OpenAI or another provider.
 
-#### ⚠️ Running Unsigned Applications (First Time)
+**Getting an API Key (5 minutes):**
 
-Since this is an educational project, the applications are **not code-signed**.
+1. **OpenAI (Recommended for beginners):**
+   - Visit: **[https://platform.openai.com/api-keys](https://platform.openai.com/api-keys)**
+   - Sign up for an account (requires payment method)
+   - Click "Create new secret key"
+   - Copy the key (starts with `sk-...`)
+   - Paste it into Whistleblower's "Analysis API Key" field
+   - **Cost:** ~$0.01-0.05 per screenshot analyzed (very affordable)
 
-**Windows** - "Windows protected your PC":
+2. **Alternative: xAI/Grok:**
+   - Visit: **[https://console.x.ai/](https://console.x.ai/)**
+   - Follow similar steps to get your API key
+   
+**Without an API key:** You can still capture screenshots and data - you just won't get automated analysis reports.
 
-1. Click **"More info"**
-2. Click **"Run anyway"**
-
-**macOS** - "Cannot be opened because the developer cannot be verified":
-
-1. Right-click (or Control-click) the app
-2. Select **"Open"**
-3. Click **"Open"** in the dialog
-
-This is normal for unsigned apps. The software is safe and open-source—feel free to review the code!
-
-**What's included:**
-
-- ✅ No Python installation required
-- ✅ All dependencies bundled (Playwright, Tkinter, etc.)
-- ✅ Fully portable—runs from any folder
-- ✅ Windows 10/11 and macOS 10.15+ supported
-
-### From Source
-
-- Python 3.12+ (`whistleblower.py`, `tkinter_ui_refactored.py`, `bootstrap_recorder.py`, `analyze_capture.py`)
-- Valid credentials for the BAS web interface you want to watch
-- Internet for the initial dependency/browser install and only when using API-backed analysis providers
+**📖 New to APIs?** See our [**API Key Guide**](docs/CLI-GUIDE.md#analysis-api-setup) for step-by-step instructions with screenshots.
 
 ---
 
-## 🏢 Supported BAS Vendors & Systems
+## What Whistleblower Does
 
-Whistleblower includes **vendor-specific templates** to simplify setup. Each template includes:
+**Captures Evidence:**
+- Automatically logs into your BAS/SCADA web interface
+- Navigates to your dashboards and graphics
+- Takes full-page screenshots
+- Extracts visible data and element states
+- Saves everything locally with timestamps
 
-- Pre-configured login selectors for that vendor
-- Typical page paths and navigation patterns
-- Documentation and examples
+**AI Analysis (with API key):**
+- Reads sensor values from screenshots
+- Detects anomalies and unusual states
+- Identifies potential issues
+- Creates easy-to-read reports
 
-### Templates Registry
-
-| Vendor | System | Template | Status | Notes |
-| ------ | ------ | -------- | ------ | ----- |
-| **Tridium** | Niagara (N4) | `niagara.template.json` | ✅ Tested | 2-step multi-page login, .px dashboards |
-| **Trane** | Tracer Synchrony | `trane-tracer-synchrony.template.json` | ✅ Tested | /hui/* pages, hash routing |
-| **Generic** | React/SPA (URL routing) | `react-url-based.template.json` | ✅ Tested | Hash-routed navigation |
-| **Generic** | React/SPA (click nav) | `react-click-based.template.json` | ✅ Tested | Menu-based navigation |
-| **Johnson Controls** | OpenBlue/Metasys | `johnson-controls.template.json` | 🔜 Planned | — |
-| **Custom/Unknown** | Any | `example.json` or bootstrap_recorder | ✅ Tested | Use bootstrap_recorder to auto-discover |
-
-**For detailed vendor info and setup instructions**, see [sites/README.md](sites/README.md) and [sites/templates-registry.json](sites/templates-registry.json).
-
----
-
-## 🗂️ Repository layout
-
-```text
-Whistleblower/
-├── requirements.txt
-├── whistleblower.py          # Main capture runner (Playwright automation)
-├── bootstrap_recorder.py     # Records operator flow, generates starter config + steps
-├── analyze_capture.py        # Optional LLM analysis for captured runs
-├── tkinter_ui_refactored.py  # Local desktop UI (bootstrap/capture/schedule/analysis)
-├── ui_app.py                 # Legacy local web UI (Flask)
-├── sites/
-│   ├── README.md             # Template & config guide
-│   ├── templates-registry.json # All vendor profiles
-│   ├── niagara.template.json # Niagara/Tridium template
-│   ├── trane-tracer-synchrony.template.json
-│   ├── react-*.template.json # Generic SPA templates
-│   └── example.json          # Starting point for custom systems
-├── data/                     # Runtime output (screenshots, DOM, etc.)
-│   └── .gitkeep
-├── docs/
-│   ├── ROADMAP.md
-│   └── CHANGELOG.md
-├── BUILD-GUIDE.md            # macOS + Windows build guide
-├── README.md
-└── LICENSE                   # MIT
-```
-
-- `sites/` -> per-site JSON configs (URLs, creds, login selectors, pages to hit)
-- `data/` -> where the goods land (don't commit this)
+**What it does NOT do:**
+- ❌ No setpoint changes or control actions (100% read-only)
+- ❌ No vendor-specific protocols or APIs
+- ❌ No cloud storage (everything stays local)
+- ❌ No automatic alerts (yet)
 
 ---
 
-## ⚡ Quick Start
+## Supported Systems
 
-### Option 1: Windows Executable (No Python Required)
+Whistleblower works with **any web-based control system**. We provide ready-to-use templates for:
 
-1. Download the Whistleblower Windows package from the releases page
-1. Extract the ZIP file to your desired location
-1. Run `install-browsers.bat` (first time only - downloads Chromium)
-1. Double-click `Whistleblower.exe`
-1. Use the desktop UI to configure and run captures
+| Vendor | System | Status |
+|--------|--------|--------|
+| **Tridium** | Niagara (N4) | ✅ Tested |
+| **Trane** | Tracer Synchrony | ✅ Tested |
+| **Generic** | React/SPA Systems | ✅ Tested |
+| **Any Custom** | Web-based systems | ✅ Use Bootstrap Recorder |
 
-See `dist/Whistleblower/README.txt` in the Windows build for full details.
-
-### Option 2: From Source (Python Required)
-
-1. Clone it
-
-   ```bash
-   git clone https://github.com/makeitworkok/Whistleblower.git
-   cd Whistleblower
-   ```
-
-1. Make an output dir (if not already there)
-
-   ```bash
-   mkdir -p data
-   ```
-
-1. Install dependencies (first time only)
-
-   ```bash
-   python3 -m pip install -r requirements.txt
-   python3 -m playwright install chromium
-   ```
-
-1. Set up your private config (never commit this!)
-
-   **Option A: Use a vendor template** (if your system is in the registry)
-
-   Check `sites/templates-registry.json` to find your BAS vendor:
-
-   ```bash
-   # For Niagara systems:
-   cp sites/niagara.template.json sites/my-niagara-site.json
-
-   # For Trane Tracer Synchrony:
-   cp sites/trane-tracer-synchrony.template.json sites/my-trane-site.json
-
-   # For custom/unknown systems:
-   cp sites/example.json sites/my-site.json
-   ```
-
-   **Option B: Auto-discover selectors** (recommended for first-time setup)
-
-   ```bash
-   python3 bootstrap_recorder.py --url https://your-system.local --site-name my-site
-   ```
-
-   This launches an interactive browser where you log in manually. It discovers:
-
-   - Login form selectors
-   - Navigation paths
-   - UI element states
-
-   Output: `sites/my-site.bootstrap.json` (ready to test)
-
-   Then edit `sites/my-site.json` with your real URL, username/password, login selectors, and pages/selectors.
-
-   See [sites/README.md](sites/README.md) for detailed template documentation and examples.
-
-1. Run it
-
-   **Linux/macOS/Windows (PowerShell/CMD):**
-
-   ```bash
-   python3 whistleblower.py --config sites/my-site.json
-   ```
-
-   For macOS .app builds, see [BUILD-GUIDE.md](BUILD-GUIDE.md).
-
-1. Optional (debug only): record the full interaction as video
-
-   ```bash
-   python3 whistleblower.py --config sites/my-site.json --record-video
-   ```
-
-   Video output is saved per run at:
-   `data/<site_name>/<timestamp>/video/session.mp4`
-
-   For normal scheduled/routine capture, leave `--record-video` off.
+**📖 Full vendor list:** [Supported Systems Guide](sites/README.md)
 
 ---
 
-## 🧪 Testing Your Configuration
+## For Developers
 
-Before deploying, validate your configuration and test on your system:
+Want to run from source or customize? You'll need Python 3.12+.
+
+<details>
+<summary><strong>Click to expand developer setup</strong></summary>
+
+### Installation
 
 ```bash
-# Quick validation of all site configs (no network required)
-python3 test_configs.py
-
-# Functional test on reachable systems (attempts actual login/capture)
-python3 test_functional.py
-```
-
-Both scripts auto-discover all `sites/*.json` files and report results. Add new sites and re-run—tests update automatically.
-
-👉 **[See docs/TESTING.md](docs/TESTING.md) for detailed testing guide and troubleshooting.**
-
----
-
-## Multi-Step Login Support
-
-Some BAS systems (like Niagara) require **login across multiple pages**:
-
-```text
-Step 1: /prelogin → Enter username → Submit
-         ↓
-Step 2: /login → Enter password → Submit
-         ↓
-Success → Dashboard
-```
-
-Whistleblower **automatically detects and handles** multi-step logins:
-
-- Detects when only username field is visible
-- Fills username, submits, waits for password page
-- Detects when password field appears
-- Fills password, submits, waits for authentication
-- Works with both single-step and multi-step flows
-
-**No special configuration needed** — the login function adapts based on what's visible.
-
-If you have a system with unusual login flow (OAuth, MFA, etc.), use `bootstrap_recorder.py` to understand the flow, then adjust selectors in your config.
-
----
-
-## Local Desktop UI (recommended for non-devs)
-
-Run the local desktop UI to manage bootstrap recording, captures, schedules, and analysis.
-
-Install local dependencies first:
-
-```bash
+git clone https://github.com/makeitworkok/Whistleblower.git
+cd Whistleblower
 python3 -m pip install -r requirements.txt
 python3 -m playwright install chromium
 ```
 
-Then start the UI:
+### Quick Run
 
 ```bash
+# Use the desktop UI
 python3 tkinter_ui_refactored.py
+
+# Or run from command line
+python3 whistleblower.py --config sites/example.json
 ```
 
-What the UI provides:
+### Advanced Documentation
 
-- Bootstrap recorder (build a starter config and suggested steps)
-- Main capture (run once)
-- Scheduled capture (run every N minutes)
-- Analysis (single combined analysis per run, or per-page)
-- Time-range analysis (analyze runs between start/end UTC filters)
+- **[CLI Guide](docs/CLI-GUIDE.md)** - Command-line usage, analysis setup, advanced options
+- **[Configuration Guide](sites/README.md)** - Creating site configs, templates, credentials
+- **[React/SPA Systems](docs/REACTJS-GUIDE.md)** - Working with modern web frameworks
+- **[Testing Guide](docs/TESTING.md)** - Validating configurations and running tests
+- **[Build Guide](BUILD-GUIDE.md)** - Creating Windows/macOS executables
 
-### Analysis API key
-
-Analysis requires an API key. You can:
-
-- Set `OPENAI_API_KEY` or `XAI_API_KEY` in your environment
-- Paste it into the UI (saved to `~/.whistleblower_env`)
-- Or place it in `.private/openai.env` (CLI-only)
+</details>
 
 ---
 
-## 📁 Output Example
+## 📁 What Gets Captured
 
-After a successful run:
+After each run, you'll find timestamped folders with all the evidence:
 
-```text
+```
 data/
-└── my-site/                  # From "site_name" in your config
-    └── 20260210-161200/      # Timestamp of run
+└── my-building/
+    └── 20260220-143000/          # Timestamp: Feb 20, 2026 at 2:30 PM
         ├── main_dashboard/
-        │   ├── screenshot.png
-        │   ├── dom.json       # Extracted text/elements
-        │   └── meta.json      # Run info, selectors used, etc.
-        └── ahu-graphics/
-            ├── screenshot.png
+        │   ├── screenshot.png    # Full screenshot
+        │   ├── dom.json         # Text and data from page
+        │   ├── meta.json        # Run details
+        │   └── analysis.md      # AI analysis (if you have API key)
+        └── hvac_graphics/
             └── ...
 ```
 
-Each run gets its own timestamped folder. Nothing gets overwritten.
+Everything stays on your computer. Nothing is uploaded unless you explicitly run analysis.
 
 ---
 
-## ⚙️ Configuration (sites/*.json)
+## ⚠️ Important Notes
 
-Configs are per-site JSON files. Minimal example in `sites/example.json`.
+**Read-Only Access:** Configure your BAS account with **read-only permissions only**. Never give Whistleblower control or override rights.
 
-Key fields you'll need:
+**Unsigned Applications:** The desktop apps are not code-signed (this is an open-source educational project). Your OS will warn you the first time - this is normal and safe.
 
-- `name`: Friendly name for output folders
-- `base_url`: Login/entry URL
-- `login_attempts`: Retry count for login flows
-- `viewport`: Browser viewport size (`width`/`height`)
-- `login`: Credentials + selectors:
-  - `username` / `password` (or env placeholders like `${MY_SITE_USERNAME}`)
-  - `user_selector`, `pass_selector`, `submit_selector`, `success_selector`
-- `watch`: Array of capture targets. Each target supports `name`, `url`, `root_selector`, `settle_ms`, `screenshot_full_page` or `screenshot_selector`, optional `pre_click_selector`, `pre_click_wait_ms`, `pre_click_steps`, and optional `prefer_url_on_pre_click_change` (default `true`).
-
-**Working with ReactJS/SPAs:** Navigation selectors can be volatile in single-page applications.
-See [docs/REACTJS-GUIDE.md](docs/REACTJS-GUIDE.md) for strategies on stable selectors, handling
-loading states, and dealing with hash-based routing.
-
-BAS UIs vary wildly—some need delays, some have iframes, some throw modals. Tweak selectors and add waits in code as needed for your target.
-
-### Record steps with Playwright codegen
-
-If the UI is JS-driven and hard to script from static URLs, record your click path and pull selectors:
-
-```bash
-npx playwright codegen https://your-bas-host.example.com/index.html --viewport-size 1920,1080
-```
-
-Useful variant (save script while recording):
-
-```bash
-npx playwright codegen https://your-bas-host.example.com/index.html --viewport-size 1920,1080 -o codegen-session.ts
-```
-
-Use the generated click selectors in your site config under `watch[].pre_click_steps`.
-
-### Bootstrap a config by recording a real session
-
-For first-time setup, use the standalone recorder to generate a starter config from your
-actual login/navigation flow.
-
-1. Run the recorder locally (headed browser):
-
-   ```bash
-   python3 bootstrap_recorder.py \
-     --url "https://your-bas-host/login" \
-     --site-name "my_site" \
-     --ignore-https-errors \
-     --record-video
-   ```
-
-2. In the opened browser, perform a normal read-only operator flow:
-   - Login
-   - Navigate to the graphics/pages you care about
-   - Return to terminal and press Enter
-
-3. Generated outputs:
-   - `sites/my_site.bootstrap.json` (starter Whistleblower config)
-   - `sites/my_site.steps.json` (suggested `pre_click_steps`)
-   - `data/bootstrap/my_site/<timestamp>/` (raw events, screenshot, optional video)
-
-4. Copy and finalize:
-   - Copy `sites/my_site.bootstrap.json` to your real config (for example `sites/local.json`)
-   - Export env vars for credentials and adjust selectors as needed
-   - Move selected steps from `sites/my_site.steps.json` into `watch[].pre_click_steps`
-
-   Generated bootstrap configs use environment placeholders by default:
-   - `username`: `${MY_SITE_USERNAME}`
-   - `password`: `${MY_SITE_PASSWORD}`
-
-   Example run:
-
-   ```bash
-   export MY_SITE_USERNAME='your_user'
-   export MY_SITE_PASSWORD='your_password'
-
-   python3 whistleblower.py --config sites/my_site.local.json
-   ```
+**API Costs:** If using AI analysis, OpenAI charges ~$0.01-0.05 per screenshot. Monitor your usage at [platform.openai.com](https://platform.openai.com/).
 
 ---
 
-## Current Status
+## 📚 Documentation
 
-Stable v1.0.0 release.
+### Getting Started
+- **[Desktop App User Guide](TKINTER-BUILD-GUIDE.md)** - Using the Windows/macOS applications
+- **[Configuration Guide](sites/README.md)** - Setting up your first system
+- **[Supported Systems](sites/README.md#supported-vendors)** - Vendor templates and examples
 
-Implemented and in active use:
+### Advanced Topics
+- **[CLI Guide](docs/CLI-GUIDE.md)** - Command-line usage and automation
+- **[React/SPA Systems](docs/REACTJS-GUIDE.md)** - Modern web frameworks (React, Vue, Angular)
+- **[Testing & Validation](docs/TESTING.md)** - Test configs before deployment
+- **[Build from Source](BUILD-GUIDE.md)** - Create your own executables
 
-- Read-only capture pipeline (`whistleblower.py`) with per-target artifacts
-- Bootstrap flow recorder (`bootstrap_recorder.py`) for starter configs and click-step generation
-- Local desktop UI (`tkinter_ui_refactored.py`) for bootstrap, one-off capture, scheduling, and analysis
-- Post-capture LLM analysis (`analyze_capture.py`) with:
-  - OpenAI or xAI/Grok providers
-  - Combined run analysis or per-page analysis
-  - Start/end UTC filtering for batch analysis
-
-Current focus:
-
-- Harden capture reliability across flaky/hash-routed BAS UIs
-- Add deterministic diff artifacts between runs
-- Layer deterministic rule checks on top of captures/diffs
-- Continue Windows non-dev packaging track: `docs/windows-packaging-plan.md`
-
-## 🚦 Alpha Exit Checklist
-
-Mark this complete before cutting `v0.1.0-alpha`:
-
-- [x] Local setup succeeds on a clean machine (`pip install -r requirements.txt` and `playwright install chromium`).
-- [x] At least 2 representative site configs run successfully (default run, no video).
-- [x] Each run writes `screenshot.png`, `dom.json`, `meta.json` per target.
-- [x] `readiness_error` is `null` for baseline demo targets.
-- [x] `bootstrap_recorder.py` generates `*.bootstrap.json` and `*.steps.json`.
-- [x] `analyze_capture.py` emits `analysis.md`, `analysis.json`, and `analysis_summary.json`.
-- [x] `tkinter_ui_refactored.py` supports bootstrap, one-off capture, scheduling, and analysis.
-- [x] Private secrets are not committed (`sites/*.local.json`, `.private/*` ignored).
-- [x] README quick start and config schema match real CLI behavior.
+### Reference
+- **[Roadmap](docs/ROADMAP.md)** - Planned features and improvements
+- **[Changelog](docs/CHANGELOG.md)** - Version history
+- **[Release Notes](RELEASE_NOTES_v1.0.0.md)** - v1.0.0 details
 
 ---
 
-## 🧠 Analyze Captures with an Agent
+## 🤝 Contributing & Support
 
-After a Whistleblower run completes, you can ask an LLM to review each captured target
-using both `screenshot.png` and `dom.json`.
+**Questions or issues?** [Open an issue on GitHub](https://github.com/makeitworkok/Whistleblower/issues)
 
-Provider options:
-
-- OpenAI (default): `--provider openai` (or omit `--provider`)
-- xAI/Grok: `--provider xai` or `--provider grok`
-
-1. Set API key:
-
-   ```bash
-   export OPENAI_API_KEY='your_api_key'
-   ```
-
-   For Grok/xAI instead:
-
-   ```bash
-   export XAI_API_KEY='your_xai_key'
-   ```
-
-   `GROK_API_KEY` is also accepted as a fallback.
-
-   Optional (recommended): store once in a private file:
-
-   ```bash
-   cp .private/openai.env.example .private/openai.env
-   # edit .private/openai.env and set OPENAI_API_KEY or XAI_API_KEY
-   ```
-
-   `analyze_capture.py` auto-loads `.private/openai.env`.
-
-1. Analyze the latest run for a site (OpenAI default):
-
-   ```bash
-   python3 analyze_capture.py --site ignition_demo
-   ```
-
-1. Analyze the latest run for a site with Grok/xAI:
-
-   ```bash
-   python3 analyze_capture.py --provider grok --site ignition_demo
-   ```
-
-1. Analyze an explicit run directory:
-
-   ```bash
-   python3 analyze_capture.py --run-dir data/ignition_demo/20260212-174539
-   ```
-
-1. Analyze a UTC time window across runs (optionally scoped by `--site`):
-
-   ```bash
-   python3 analyze_capture.py \
-     --site ignition_demo \
-     --start-utc 2026-02-01T00:00:00Z \
-     --end-utc 2026-02-19T23:59:59Z
-   ```
-
-1. Force per-page output instead of a combined run summary:
-
-   ```bash
-   python3 analyze_capture.py --site ignition_demo --per-page
-   ```
-
-Outputs are written next to each target:
-
-- `analysis.md` (human-readable findings)
-- `analysis.json` (structured metadata)
-
-And one run-level file:
-
-- `analysis_summary.json`
-
----
-
-## Additional Documentation
-
-### React/SPA Frontend Support
-
-- **[docs/REACT-DOCS-MAP.md](docs/REACT-DOCS-MAP.md)** - START HERE - Navigation guide for React documentation
-- **[docs/REACTJS-GUIDE.md](docs/REACTJS-GUIDE.md)** - Comprehensive guide for React, Vue, Angular, and SPA frontends
-- **[docs/REACT-QUICK-REF.md](docs/REACT-QUICK-REF.md)** - Quick reference with copy-paste config patterns
-- **[docs/REACT-TROUBLESHOOTING.md](docs/REACT-TROUBLESHOOTING.md)** - Step-by-step troubleshooting checklist
-- **[sites/ignition_perspective_annotated.example.json](sites/ignition_perspective_annotated.example.json)** - Annotated real-world example
-
-### Project Documentation
-
-- **[docs/TESTING.md](docs/TESTING.md)** - Testing guide: how to run test_configs.py and test_functional.py, add tests for new sites
-- **[docs/TEMPLATES.md](docs/TEMPLATES.md)** - Complete template system documentation and vendor support
-- [sites/README.md](sites/README.md) - Site configuration quick-start and credential management
-- [docs/ROADMAP.md](docs/ROADMAP.md) - Development roadmap and milestones
-- [docs/CHANGELOG.md](docs/CHANGELOG.md) - Version history
-- [docs/CONSTRAINTS.md](docs/CONSTRAINTS.md) - Non-negotiable design constraints
+**Want to contribute?** Pull requests are welcome! See [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)
 
 ---
 

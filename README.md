@@ -32,7 +32,7 @@ Whistleblower is the integrity check that should come first—capturing the pres
 
 1. **[📥 Download Whistleblower for Windows](https://github.com/makeitworkok/Whistleblower/releases/latest)** (47 MB)
 2. Extract the ZIP file
-3. **FIRST TIME ONLY:** Go into the `Whistleblower` folder and run `install-browsers.bat` (downloads Microsoft Edge browser ~130 MB)
+3. **FIRST TIME ONLY:** Go into the `Whistleblower` folder and run `install-browsers.bat` (installs Playwright browsers)
 4. After browsers install, launch `Whistleblower.exe`
 5. Click "More info" → "Run anyway" if Windows warns you (this is normal for unsigned apps)
 

@@ -141,7 +141,7 @@ xattr -cr /Applications/Whistleblower.app
 ## 🙏 Acknowledgments
 
 Built with:
-- Python 3.11
+- Python 3.12
 - Playwright (browser automation)
 - Tkinter (GUI)
 - PyInstaller (Windows packaging)

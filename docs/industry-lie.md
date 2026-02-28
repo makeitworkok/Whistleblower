@@ -9,7 +9,7 @@ Every "AI for buildings" platform does the same tired routine:
 - 🧲 Sucks up point data, trends, statuses, alarms  
 - 🤖 Feeds it to ML models, rules, forecasting  
 - 📊 Spits out dashboards, alerts, energy reports, "optimization"  
-- 💰 Charges you twelve cents a square foot per month (or per point, per building, whatever they can squeeze)
+- 💰 Charges you some cents/sqft per month (or per point, per building, whatever they can squeeze)
 
 The whole thing rests on one giant, unspoken, indefensible lie:
 

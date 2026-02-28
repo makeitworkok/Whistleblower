@@ -4,7 +4,7 @@ This document describes how to build and package Whistleblower as a Windows exec
 
 ## Prerequisites
 
-- Python 3.11+
+- Python 3.12+
 - PyInstaller
 - Playwright and its dependencies
 - Git
@@ -202,7 +202,7 @@ When releasing a new version:
 
 For automated builds:
 - Use GitHub Actions with Windows runner
-- Install Python 3.11+ and dependencies
+- Install Python 3.12+ and dependencies
 - Run PyInstaller build
 - Upload artifacts or create release
 - Consider code signing certificate for the executable

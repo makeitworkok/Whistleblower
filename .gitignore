@@ -36,3 +36,6 @@ dist/
 # OS junk
 .DS_Store
 Thumbs.db
+
+# local/generated development session file
+codegen-session.py

@@ -6,7 +6,7 @@
 
 > **Read-only evidence capture for any web-based control system.**
 
-Whistleblower automatically logs into your building automation system (BAS), SCADA, or janky web dashboard, captures screenshots and data, and saves timestamped evidence locally.
+Whistleblower automatically logs into your building automation system (BAS), SCADA, or some janky half-ass dim-witted web dashboard, captures screenshots and data, and saves timestamped evidence locally.
 
 **Perfect for:** Documenting what operators actually see, catching UI inconsistencies, and creating audit trails.
 

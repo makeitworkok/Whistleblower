@@ -1,4 +1,6 @@
 @echo off
+REM Copyright (c) 2025-2026 Chris Favre - MIT License
+REM See LICENSE file for full terms
 setlocal
 REM Install Playwright browsers for Whistleblower
 REM Run this ONCE after extracting the application

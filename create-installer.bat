@@ -1,4 +1,6 @@
 @echo off
+REM Copyright (c) 2025-2026 Chris Favre - MIT License
+REM See LICENSE file for full terms
 REM Create Windows installer ZIP
 REM This script packages the built application for distribution
 

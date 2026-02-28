@@ -131,3 +131,6 @@ For answers to common questions about this code of conduct, see the FAQ at
 [Mozilla CoC]: https://github.com/mozilla/diversity
 [FAQ]: https://www.contributor-covenant.org/faq
 [translations]: https://www.contributor-covenant.org/translations
+
+<!-- Copyright (c) 2025-2026 Chris Favre - MIT License -->
+<!-- See LICENSE file for full terms -->

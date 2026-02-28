@@ -1,4 +1,6 @@
 #!/bin/bash
+# Copyright (c) 2025-2026 Chris Favre - MIT License
+# See LICENSE file for full terms
 # Create DMG installer for macOS
 # This script creates a distributable DMG file from the built application
 

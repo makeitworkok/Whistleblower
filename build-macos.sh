@@ -1,4 +1,6 @@
 #!/bin/bash
+# Copyright (c) 2025-2026 Chris Favre - MIT License
+# See LICENSE file for full terms
 # Build script for Whistleblower macOS Application
 # This script builds and packages the application for macOS distribution
 

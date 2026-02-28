@@ -266,3 +266,6 @@ export MY_SITE_PASSWORD='secure_password'
 ---
 
 **See [REACTJS-GUIDE.md](./REACTJS-GUIDE.md) for detailed explanations and troubleshooting.**
+
+<!-- Copyright (c) 2025-2026 Chris Favre - MIT License -->
+<!-- See LICENSE file for full terms -->

@@ -271,3 +271,6 @@ The Tkinter UI migration successfully solves the PyInstaller subprocess problem 
 **Status:** Ready for Windows testing  
 **Commits:** Ready to be committed  
 **Next Task:** Test on Windows (Task #9)
+
+<!-- Copyright (c) 2025-2026 Chris Favre - MIT License -->
+<!-- See LICENSE file for full terms -->

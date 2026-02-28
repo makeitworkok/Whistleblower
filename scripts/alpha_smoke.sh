@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Copyright (c) 2025-2026 Chris Favre - MIT License
+# See LICENSE file for full terms
 set -euo pipefail
 
 if [[ $# -lt 1 ]]; then

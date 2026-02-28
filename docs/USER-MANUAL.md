@@ -186,3 +186,6 @@ For reliable operations, use this routine:
 - [ ] Run one analysis report
 
 Once this checklist is complete, you are ready to scale captures across more systems.
+
+<!-- Copyright (c) 2025-2026 Chris Favre - MIT License -->
+<!-- See LICENSE file for full terms -->

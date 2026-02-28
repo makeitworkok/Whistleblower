@@ -103,3 +103,6 @@ Exit criteria:
 1. Keep core reliability work as default stream.
 2. Time-box packaging/UI work in short branches.
 3. Merge only when each phase exit criteria is met.
+
+<!-- Copyright (c) 2025-2026 Chris Favre - MIT License -->
+<!-- See LICENSE file for full terms -->

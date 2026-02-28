@@ -1,4 +1,6 @@
 # -*- mode: python ; coding: utf-8 -*-
+# Copyright (c) 2025-2026 Chris Favre - MIT License
+# See LICENSE file for full terms
 """
 PyInstaller spec file for Whistleblower Tkinter UI.
 

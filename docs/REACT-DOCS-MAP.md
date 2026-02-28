@@ -143,3 +143,6 @@ Do you have a config file already?
 ---
 
 **Remember**: All these docs work together. Start with the right one for your situation, then cross-reference as needed.
+
+<!-- Copyright (c) 2025-2026 Chris Favre - MIT License -->
+<!-- See LICENSE file for full terms -->

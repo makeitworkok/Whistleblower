@@ -7,3 +7,6 @@
 - Works via minimal per-site config (URLs + selectors). Zero-config is not required.
 - Outputs inspectable artifacts: screenshots + DOM snapshot + meta.
 - Deterministic rules decide anomalies; AI (if added) only narrates findings.
+
+<!-- Copyright (c) 2025-2026 Chris Favre - MIT License -->
+<!-- See LICENSE file for full terms -->

@@ -393,3 +393,6 @@ For build issues:
 
 Built executables include all dependencies and are subject to their respective licenses.
 See LICENSE file for Whistleblower license.
+
+<!-- Copyright (c) 2025-2026 Chris Favre - MIT License -->
+<!-- See LICENSE file for full terms -->

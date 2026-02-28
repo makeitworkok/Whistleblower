@@ -310,3 +310,6 @@ To integrate tests into your CI/CD pipeline:
 ## Questions or Issues?
 
 Check [README.md](../README.md) for troubleshooting and [TEMPLATES.md](TEMPLATES.md) for configuration details.
+
+<!-- Copyright (c) 2025-2026 Chris Favre - MIT License -->
+<!-- See LICENSE file for full terms -->

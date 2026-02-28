@@ -244,3 +244,6 @@ Whistleblower is released under the **MIT License**.
 You are free to use, modify, and distribute this software for any purpose, including commercial use, without restriction. See [LICENSE](./LICENSE) for the full license text.
 
 Contributions welcome.
+
+<!-- Copyright (c) 2025-2026 Chris Favre - MIT License -->
+<!-- See LICENSE file for full terms -->

@@ -493,3 +493,6 @@ Watch the video to see exactly when elements appear.
 4. **Simplify config to absolute minimum:** Then add complexity piece by piece
 
 Remember: **Whistleblower is read-only**. If a selector would trigger a control action, don't use it.
+
+<!-- Copyright (c) 2025-2026 Chris Favre - MIT License -->
+<!-- See LICENSE file for full terms -->

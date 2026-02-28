@@ -74,3 +74,6 @@ A multi-million-dollar circle-jerk where vendors sell polished turds back to own
 ## 🚨 Fire alarm is ringing.
 
 Who's gonna answer it? 🙋‍♂️
+
+<!-- Copyright (c) 2025-2026 Chris Favre - MIT License -->
+<!-- See LICENSE file for full terms -->

@@ -610,3 +610,6 @@ If you encounter React-specific issues not covered here:
 5. Increase `settle_ms` and `wait_ms` values incrementally
 
 Remember: **Whistleblower is read-only**. Never use selectors that trigger control actions or setpoint changes.
+
+<!-- Copyright (c) 2025-2026 Chris Favre - MIT License -->
+<!-- See LICENSE file for full terms -->

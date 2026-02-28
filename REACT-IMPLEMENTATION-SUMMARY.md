@@ -296,3 +296,6 @@ But these are **optional**. Current documentation is complete and production-rea
 - Production-ready and immediately usable
 
 Users now have clear, actionable guidance for capturing from React, Vue, Angular, and other SPA-based BAS/SCADA interfaces.
+
+<!-- Copyright (c) 2025-2026 Chris Favre - MIT License -->
+<!-- See LICENSE file for full terms -->

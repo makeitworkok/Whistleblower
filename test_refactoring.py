@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# Copyright (c) 2025-2026 Chris Favre - MIT License
+# See LICENSE file for full terms
 """
 Quick test to verify refactored bootstrap_recorder and whistleblower modules work.
 This tests that the modules can be imported and the new functions are callable.

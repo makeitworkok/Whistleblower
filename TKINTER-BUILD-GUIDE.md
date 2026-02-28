@@ -207,3 +207,6 @@ This reduces the bundle size significantly while keeping all necessary functiona
 ## License
 
 Copyright (c) 2025-2026 Chris Favre - MIT License
+
+<!-- Copyright (c) 2025-2026 Chris Favre - MIT License -->
+<!-- See LICENSE file for full terms -->

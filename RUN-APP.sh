@@ -1,4 +1,6 @@
 #!/bin/bash
+# Copyright (c) 2025-2026 Chris Favre - MIT License
+# See LICENSE file for full terms
 # Launch Whistleblower Application
 # This script launches the built Whistleblower.app
 

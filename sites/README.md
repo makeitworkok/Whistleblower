@@ -294,3 +294,6 @@ Have a template improvement?
 Open an issue or PR on the [repository](https://github.com/makeitworkok/Whistleblower).
 
 Help us build the most complete BAS vendor template database! 🚀
+
+<!-- Copyright (c) 2025-2026 Chris Favre - MIT License -->
+<!-- See LICENSE file for full terms -->

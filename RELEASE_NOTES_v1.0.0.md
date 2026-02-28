@@ -153,3 +153,6 @@ MIT License - See [LICENSE](https://github.com/makeitworkok/Whistleblower/blob/m
 ---
 
 **Download the Windows installer below and start capturing evidence from your BAS today!**
+
+<!-- Copyright (c) 2025-2026 Chris Favre - MIT License -->
+<!-- See LICENSE file for full terms -->

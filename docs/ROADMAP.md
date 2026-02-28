@@ -87,3 +87,6 @@ Last updated: 2026-02-26
 - Expand rule library from field feedback and real failure patterns.
 - Harden operator packaging path (UI + installer quality).
 - Add optional local narration over deterministic findings.
+
+<!-- Copyright (c) 2025-2026 Chris Favre - MIT License -->
+<!-- See LICENSE file for full terms -->

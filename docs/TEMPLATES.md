@@ -633,3 +633,6 @@ Want to add Johnson Controls, Honeywell, Schneider Electric, etc.?
 3. Open a PR on [GitHub](https://github.com/makeitworkok/Whistleblower)
 
 Your template will help others with the same system! 🙏
+
+<!-- Copyright (c) 2025-2026 Chris Favre - MIT License -->
+<!-- See LICENSE file for full terms -->

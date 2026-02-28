@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# Copyright (c) 2025-2026 Chris Favre - MIT License
+# See LICENSE file for full terms
 """
 Create application icon from text or image.
 This script generates icons for macOS (.icns) and Windows (.ico).

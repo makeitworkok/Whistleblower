@@ -246,3 +246,6 @@ For build issues or questions:
 ---
 
 Last updated: 2026-02-23
+
+<!-- Copyright (c) 2025-2026 Chris Favre - MIT License -->
+<!-- See LICENSE file for full terms -->

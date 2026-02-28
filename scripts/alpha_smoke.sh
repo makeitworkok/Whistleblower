@@ -7,8 +7,14 @@ if [[ $# -lt 1 ]]; then
   exit 1
 fi
 
-echo "==> Building image"
-docker build -t whistleblower .
+PYTHON_BIN="${PYTHON_BIN:-python3}"
+
+if ! command -v "$PYTHON_BIN" >/dev/null 2>&1; then
+  echo "ERROR: $PYTHON_BIN not found. Set PYTHON_BIN or install Python 3." >&2
+  exit 1
+fi
+
+echo "==> Running local smoke captures"
 
 for cfg in "$@"; do
   if [[ ! -f "$cfg" ]]; then
@@ -17,11 +23,8 @@ for cfg in "$@"; do
   fi
   echo ""
   echo "==> Running smoke capture: $cfg"
-  docker run --rm \
-    -v "$(pwd)/sites:/app/sites" \
-    -v "$(pwd)/data:/app/data" \
-    whistleblower \
-    --config "/app/$cfg" \
+  "$PYTHON_BIN" whistleblower.py \
+    --config "$cfg" \
     --timeout-ms 120000 \
     --settle-ms 15000 \
     --post-login-wait-ms 15000

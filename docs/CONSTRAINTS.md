@@ -7,4 +7,3 @@
 - Works via minimal per-site config (URLs + selectors). Zero-config is not required.
 - Outputs inspectable artifacts: screenshots + DOM snapshot + meta.
 - Deterministic rules decide anomalies; AI (if added) only narrates findings.
-- Must run in Docker.

@@ -2,9 +2,6 @@
 
 ## Supported Versions
 
-Use this section to tell people about which versions of your project are
-currently being supported with security updates.
-
 | Version | Supported          |
 | ------- | ------------------ |
 | 1.0.2   | :white_check_mark: |
@@ -12,11 +9,9 @@ currently being supported with security updates.
 
 ## Reporting a Vulnerability
 
-Use this section to tell people how to report a vulnerability.
+Help me out here, feel free to open an issue, or shoot me a note:
 
-Tell them where to go, how often they can expect to get an update on a
-reported vulnerability, what to expect if the vulnerability is accepted or
-declined, etc.
+chris@makeitworkok.com
 
 <!-- Copyright (c) 2025-2026 Chris Favre - MIT License -->
 <!-- See LICENSE file for full terms -->

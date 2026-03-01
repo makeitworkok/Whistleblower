@@ -3,6 +3,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/Python-3.12%2B-blue.svg)](https://www.python.org/)
 [![Status](https://img.shields.io/badge/Status-Stable-brightgreen.svg)](#-quick-start)
+[![CodeQL](https://github.com/makeitworkok/Whistleblower/actions/workflows/codeql.yml/badge.svg)](https://github.com/makeitworkok/Whistleblower/actions/workflows/codeql.yml)
 
 > **Read-only evidence capture for any web-based control system.**
 

@@ -17,7 +17,8 @@ def test_imports():
         import bootstrap_recorder
         import whistleblower
         import analyze_capture
-        print("✓ Successfully imported bootstrap_recorder, whistleblower, and analyze_capture")
+        import tree_spider
+        print("✓ Successfully imported bootstrap_recorder, whistleblower, analyze_capture, and tree_spider")
         return True
     except ImportError as exc:
         print(f"✗ Import failed: {exc}")
@@ -73,12 +74,15 @@ def test_cli_still_works():
         import bootstrap_recorder
         import whistleblower
         import analyze_capture
+        import tree_spider
         assert hasattr(bootstrap_recorder, 'main'), "bootstrap_recorder.main() not found"
         assert hasattr(whistleblower, 'main'), "whistleblower.main() not found"
         assert hasattr(analyze_capture, 'main'), "analyze_capture.main() not found"
+        assert hasattr(tree_spider, 'main'), "tree_spider.main() not found"
         assert callable(bootstrap_recorder.main), "bootstrap_recorder.main() not callable"
         assert callable(whistleblower.main), "whistleblower.main() not callable"
         assert callable(analyze_capture.main), "analyze_capture.main() not callable"
+        assert callable(tree_spider.main), "tree_spider.main() not callable"
         print("✓ CLI entry points (main functions) still exist")
         return True
     except (AssertionError, ImportError) as exc:
@@ -124,7 +128,34 @@ def test_function_signatures():
         for param in expected_analysis:
             assert param in analysis_params, f"Missing parameter: {param}"
         print(f"✓ analyze_capture.run_analysis() has correct parameters")
+
+        # Check spider signature
+        import tree_spider
+        spider_sig = inspect.signature(tree_spider.run_spider)
+        spider_params = list(spider_sig.parameters.keys())
+        expected_spider = ['url', 'output_dir', 'site_name', 'config_path',
+                           'max_depth', 'max_pages', 'timeout_ms',
+                           'viewport_width', 'viewport_height',
+                           'ignore_https_errors', 'take_screenshots', 'browser_type',
+                           'same_domain_only', 'stop_event', 'log_callback']
+        for param in expected_spider:
+            assert param in spider_params, f"Missing parameter: {param}"
+        print(f"✓ tree_spider.run_spider() has correct parameters")
         
+        return True
+    except (AssertionError, ImportError) as exc:
+        print(f"✗ Test failed: {exc}")
+        return False
+
+
+def test_spider_function_exists():
+    """Test that tree_spider.run_spider() function exists."""
+    print("\nTesting tree_spider.run_spider() exists...")
+    try:
+        import tree_spider
+        assert hasattr(tree_spider, 'run_spider'), "run_spider function not found"
+        assert callable(tree_spider.run_spider), "run_spider is not callable"
+        print("✓ tree_spider.run_spider() exists and is callable")
         return True
     except (AssertionError, ImportError) as exc:
         print(f"✗ Test failed: {exc}")
@@ -142,6 +173,7 @@ def main():
         test_bootstrap_function_exists,
         test_capture_function_exists,
         test_analysis_function_exists,
+        test_spider_function_exists,
         test_cli_still_works,
         test_function_signatures,
     ]

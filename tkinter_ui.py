@@ -16,6 +16,7 @@ from typing import Any
 import bootstrap_recorder
 import whistleblower
 import analyze_capture
+import tree_spider
 
 
 class WhistleblowerUI:
@@ -30,6 +31,8 @@ class WhistleblowerUI:
         self.bootstrap_thread: threading.Thread | None = None
         self.capture_thread: threading.Thread | None = None
         self.analysis_thread: threading.Thread | None = None
+        self.spider_thread: threading.Thread | None = None
+        self.spider_stop_event: threading.Event | None = None
         self.log_queue: queue.Queue[str] = queue.Queue()
         
         # Browser type variable
@@ -129,6 +132,11 @@ class WhistleblowerUI:
         analysis_canvas.bind_all("<MouseWheel>", _on_mousewheel)
         
         self._create_analysis_tab()
+        
+        # Explore tab
+        self.explore_tab = ttk.Frame(self.notebook, padding="10")
+        self.notebook.add(self.explore_tab, text="Explore")
+        self._create_explore_tab()
         
         # Log output frame
         log_frame = ttk.LabelFrame(main_frame, text="Output Log", padding="5")
@@ -874,6 +882,270 @@ class WhistleblowerUI:
             "Desktop UI for automated building automation system\n"
             "screenshot and data capture."
         )
+
+    def _create_explore_tab(self) -> None:
+        """Create the Explore tab for read-only auto-exploration of BAS web UIs."""
+        tab = self.explore_tab
+        tab.columnconfigure(1, weight=1)
+
+        # URL input
+        ttk.Label(tab, text="URL:").grid(row=0, column=0, sticky=tk.W, pady=5)
+        self.spider_url = tk.StringVar(value="https://")
+        ttk.Entry(tab, textvariable=self.spider_url, width=50).grid(
+            row=0, column=1, columnspan=2, sticky="ew", pady=5, padx=5
+        )
+
+        # Site name
+        ttk.Label(tab, text="Site Name:").grid(row=1, column=0, sticky=tk.W, pady=5)
+        self.spider_site_name = tk.StringVar(value="spider_run")
+        ttk.Entry(tab, textvariable=self.spider_site_name, width=50).grid(
+            row=1, column=1, columnspan=2, sticky="ew", pady=5, padx=5
+        )
+
+        # Output directory
+        ttk.Label(tab, text="Output Dir:").grid(row=2, column=0, sticky=tk.W, pady=5)
+        self.spider_output_dir = tk.StringVar(value="data/spider")
+        dir_frame = ttk.Frame(tab)
+        dir_frame.grid(row=2, column=1, columnspan=2, sticky="ew", pady=5, padx=5)
+        ttk.Entry(dir_frame, textvariable=self.spider_output_dir, width=40).pack(
+            side=tk.LEFT, fill=tk.X, expand=True
+        )
+        ttk.Button(
+            dir_frame, text="Browse...", command=self._browse_spider_output_dir
+        ).pack(side=tk.LEFT, padx=(5, 0))
+
+        # Config file (optional, for login)
+        ttk.Label(tab, text="Config File:").grid(row=3, column=0, sticky=tk.W, pady=5)
+        self.spider_config = tk.StringVar(value="")
+        cfg_frame = ttk.Frame(tab)
+        cfg_frame.grid(row=3, column=1, columnspan=2, sticky="ew", pady=5, padx=5)
+        ttk.Entry(cfg_frame, textvariable=self.spider_config, width=40).pack(
+            side=tk.LEFT, fill=tk.X, expand=True
+        )
+        ttk.Button(
+            cfg_frame, text="Browse...", command=self._browse_spider_config
+        ).pack(side=tk.LEFT, padx=(5, 0))
+        ttk.Label(
+            cfg_frame,
+            text="(optional – needed for sites with login)",
+            font=("TkDefaultFont", 9, "italic"),
+        ).pack(side=tk.LEFT, padx=(5, 0))
+
+        # Traversal settings
+        traversal_frame = ttk.LabelFrame(tab, text="Traversal Settings", padding="5")
+        traversal_frame.grid(row=4, column=0, columnspan=3, sticky="ew", pady=10)
+
+        ttk.Label(traversal_frame, text="Max Depth:").grid(
+            row=0, column=0, sticky=tk.W, padx=5
+        )
+        self.spider_max_depth = tk.IntVar(value=3)
+        ttk.Spinbox(
+            traversal_frame,
+            from_=1,
+            to=10,
+            textvariable=self.spider_max_depth,
+            width=8,
+        ).grid(row=0, column=1, padx=5)
+
+        ttk.Label(traversal_frame, text="Max Pages:").grid(
+            row=0, column=2, sticky=tk.W, padx=5
+        )
+        self.spider_max_pages = tk.IntVar(value=50)
+        ttk.Spinbox(
+            traversal_frame,
+            from_=1,
+            to=500,
+            increment=10,
+            textvariable=self.spider_max_pages,
+            width=8,
+        ).grid(row=0, column=3, padx=5)
+
+        ttk.Label(traversal_frame, text="Timeout (ms):").grid(
+            row=0, column=4, sticky=tk.W, padx=5
+        )
+        self.spider_timeout = tk.IntVar(value=30000)
+        ttk.Spinbox(
+            traversal_frame,
+            from_=5000,
+            to=120000,
+            increment=5000,
+            textvariable=self.spider_timeout,
+            width=10,
+        ).grid(row=0, column=5, padx=5)
+
+        # Options
+        options_frame = ttk.LabelFrame(tab, text="Options", padding="5")
+        options_frame.grid(row=5, column=0, columnspan=3, sticky="ew", pady=10)
+
+        self.spider_ignore_https = tk.BooleanVar(value=True)
+        ttk.Checkbutton(
+            options_frame,
+            text="Ignore HTTPS errors",
+            variable=self.spider_ignore_https,
+        ).grid(row=0, column=0, sticky=tk.W, padx=5)
+
+        self.spider_take_screenshots = tk.BooleanVar(value=True)
+        ttk.Checkbutton(
+            options_frame,
+            text="Take screenshots",
+            variable=self.spider_take_screenshots,
+        ).grid(row=0, column=1, sticky=tk.W, padx=5)
+
+        self.spider_same_domain = tk.BooleanVar(value=True)
+        ttk.Checkbutton(
+            options_frame,
+            text="Same domain only (recommended)",
+            variable=self.spider_same_domain,
+        ).grid(row=0, column=2, sticky=tk.W, padx=5)
+
+        # Buttons
+        btn_frame = ttk.Frame(tab)
+        btn_frame.grid(row=6, column=0, columnspan=3, pady=20)
+
+        self.spider_start_btn = ttk.Button(
+            btn_frame,
+            text="Start Exploration",
+            command=self._start_spider,
+        )
+        self.spider_start_btn.pack(side=tk.LEFT, padx=5)
+
+        self.spider_stop_btn = ttk.Button(
+            btn_frame,
+            text="Stop Exploration",
+            command=self._stop_spider,
+            state="disabled",
+        )
+        self.spider_stop_btn.pack(side=tk.LEFT, padx=5)
+
+        # Status
+        self.spider_status = tk.StringVar(value="Not running")
+        ttk.Label(tab, text="Status:").grid(row=7, column=0, sticky=tk.W, padx=5)
+        ttk.Label(tab, textvariable=self.spider_status).grid(
+            row=7, column=1, sticky=tk.W, padx=5
+        )
+
+    def _browse_spider_output_dir(self) -> None:
+        """Browse for spider output directory."""
+        directory = filedialog.askdirectory(initialdir=self.spider_output_dir.get())
+        if directory:
+            self.spider_output_dir.set(directory)
+
+    def _browse_spider_config(self) -> None:
+        """Browse for optional site config file used for login."""
+        filename = filedialog.askopenfilename(
+            initialdir="sites",
+            title="Select Config File (optional)",
+            filetypes=(("JSON files", "*.json"), ("All files", "*.*")),
+        )
+        if filename:
+            self.spider_config.set(filename)
+
+    def _start_spider(self) -> None:
+        """Start the tree spider exploration in a thread."""
+        if self.spider_thread is not None and self.spider_thread.is_alive():
+            messagebox.showwarning("Warning", "Exploration is already running")
+            return
+
+        url = self.spider_url.get().strip()
+        site_name = self.spider_site_name.get().strip()
+
+        if not url or url == "https://":
+            messagebox.showerror("Error", "Please enter a valid URL")
+            return
+
+        if not site_name:
+            messagebox.showerror("Error", "Please enter a site name")
+            return
+
+        config_path = self.spider_config.get().strip() or None
+        if config_path and not Path(config_path).exists():
+            messagebox.showerror("Error", f"Config file not found: {config_path}")
+            return
+
+        self.spider_start_btn.config(state="disabled")
+        self.spider_stop_btn.config(state="normal")
+        self.spider_status.set("Running…")
+        self._log("=== Starting Exploration ===")
+        self._log(f"URL: {url}")
+        self._log(f"Site Name: {site_name}")
+        self._log(f"Browser: {self.browser_var.get()}")
+        self._log(f"Max depth: {self.spider_max_depth.get()}  Max pages: {self.spider_max_pages.get()}")
+
+        self.spider_stop_event = threading.Event()
+        self.spider_thread = threading.Thread(
+            target=self._run_spider_thread,
+            args=(
+                url,
+                site_name,
+                self.spider_output_dir.get(),
+                config_path,
+                self.spider_max_depth.get(),
+                self.spider_max_pages.get(),
+                self.spider_timeout.get(),
+                self.spider_ignore_https.get(),
+                self.spider_take_screenshots.get(),
+                self.browser_var.get(),
+                self.spider_same_domain.get(),
+            ),
+            daemon=True,
+        )
+        self.spider_thread.start()
+
+    def _stop_spider(self) -> None:
+        """Signal the running spider to stop."""
+        if self.spider_stop_event is not None:
+            self.spider_stop_event.set()
+        self.spider_status.set("Stopping…")
+        self._log("Stopping exploration (will finish current page)…")
+
+    def _run_spider_thread(
+        self,
+        url: str,
+        site_name: str,
+        output_dir: str,
+        config_path: str | None,
+        max_depth: int,
+        max_pages: int,
+        timeout_ms: int,
+        ignore_https: bool,
+        take_screenshots: bool,
+        browser_type: str,
+        same_domain_only: bool,
+    ) -> None:
+        """Run the spider in a background thread."""
+        try:
+            result = tree_spider.run_spider(
+                url=url,
+                output_dir=output_dir,
+                site_name=site_name,
+                config_path=config_path,
+                max_depth=max_depth,
+                max_pages=max_pages,
+                timeout_ms=timeout_ms,
+                ignore_https_errors=ignore_https,
+                take_screenshots=take_screenshots,
+                browser_type=browser_type,
+                same_domain_only=same_domain_only,
+                stop_event=self.spider_stop_event,
+                log_callback=self._log,
+            )
+            self._log(f"Exploration complete!")
+            self._log(f"Pages visited : {result['total_pages']}")
+            self._log(f"OK pages      : {result['ok_pages']}")
+            self._log(f"Bad links     : {result['bad_links']}")
+            if result["bad_link_details"]:
+                self._log("Bad link details:")
+                for bl in result["bad_link_details"]:
+                    self._log(f"  [{bl['error']}] {bl['url']}")
+            self._log(f"Report        : {result['report_path']}")
+            messagebox.showinfo("Complete", "Exploration finished!")
+        except Exception as exc:
+            self._log(f"ERROR: {exc}")
+            messagebox.showerror("Error", f"Exploration failed: {exc}")
+        finally:
+            self.root.after(0, lambda: self.spider_start_btn.config(state="normal"))
+            self.root.after(0, lambda: self.spider_stop_btn.config(state="disabled"))
+            self.root.after(0, lambda: self.spider_status.set("Not running"))
 
 
 def main() -> int:

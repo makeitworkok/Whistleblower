@@ -9,7 +9,7 @@ Every "AI for buildings" platform does the same tired routine:
 - 🧲 Sucks up point data, trends, statuses, alarms  
 - 🤖 Feeds it to ML models, rules, forecasting  
 - 📊 Spits out dashboards, alerts, energy reports, "optimization"  
-- 💰 Charges you some cents/sqft per month (or per point, per building, whatever they can squeeze)
+- 💰 Charges you some $ per month (or per point, per building, whatever they can squeeze)
 
 The whole thing rests on one giant, unspoken, indefensible lie:
 
@@ -42,9 +42,9 @@ Every API adds another coat of paint over the rot. Makes the lies shinier, harde
 So the industry trains AI on corrupted, stale, inconsistent, API-mangled data…  
 then charges owners to look at prettier versions of the same bullshit. 💸
 
-## 🗑️ Garbage in → API garbage out → polished turd → 💰 quarterly subscription.
+## 🗑️ Garbage in → API garbage out → polished turd → 💰.
 
-Before you spend one more dollar on "predictive analytics" or "AI optimization," someone has to pull the fire alarm:
+Before "predictive analytics" or "AI optimization," someone has to pull the fire alarm:
 
 ## 🔥 **The presentation layer is lying to you—and the APIs are hiding the body.**
 
@@ -69,7 +69,7 @@ rules, models, reports, decisions, energy savings claims, invoices.
 
 Until that integrity check comes first, the rest is just expensive kabuki theater. 🎭  
 
-A multi-million-dollar circle-jerk where vendors sell polished turds back to owners too busy to notice the building is bleeding money. 💸🩸
+A multi-million-dollar circle-jerk selling polished turds back to owners too busy to notice the building is bleeding money. 💸🩸
 
 ## 🚨 Fire alarm is ringing.
 

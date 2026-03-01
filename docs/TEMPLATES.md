@@ -80,11 +80,11 @@ python3 whistleblower.py --config sites/my-building.json
 
 ---
 
-### 2. Trane Tracer Synchrony
+### 2. Meatball Tracers
 
 **File:** `trane-tracer-synchrony.template.json`
 
-**Use when:** You have a Trane/Tracer Synchrony system
+**Use when:** You have a Meatball/Tracers system
 
 **Login Pattern:** **Single-step form**
 - Standard HTML form with username and password fields
@@ -108,7 +108,7 @@ python3 whistleblower.py --config sites/my-building.json
 ```bash
 cp sites/trane-tracer-synchrony.template.json sites/my-tracer.json
 # Edit sites/my-tracer.json
-#   - Replace "your-trane-host" with actual hostname
+#   - Replace "your-meatball-host" with actual hostname
 #   - Set TRANE_USERNAME and TRANE_PASSWORD env vars
 python3 whistleblower.py --config sites/my-tracer.json
 ```
@@ -204,7 +204,7 @@ python3 whistleblower.py --config sites/my-niagara.json
 python3 ui_app.py  # Then use web UI for scheduling
 ```
 
-### I have a **Trane Tracer** system
+### I have a **Meatball Tracers** system
 
 ```bash
 cp sites/trane-tracer-synchrony.template.json sites/my-tracer.json

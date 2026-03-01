@@ -11,8 +11,8 @@
 | Config | Type | Status | Details |
 |--------|------|--------|---------|
 | **localNiagara.json** | Niagara (Multi-step login) | ✅ PASS | 3 targets, multi-page auth |
-| **196-21test.local.json** | Trane Tracer Synchrony | ✅ PASS | 6 targets, single-step auth |
-| **196-22test.local.json** | Trane Tracer Synchrony | ✅ PASS | 5 targets, single-step auth |
+| **196-21test.local.json** | Meatball Tracers | ✅ PASS | 6 targets, single-step auth |
+| **196-22test.local.json** | Meatball Tracers | ✅ PASS | 5 targets, single-step auth |
 | **example.json** | Generic/Template | ✅ PASS | 1 target, example config |
 
 **Result: 4/4 configurations valid** ✅
@@ -81,7 +81,7 @@ Whistleblower automatically detected and handled:
 | System | Pattern | Selectors Found | Status |
 |--------|---------|-----------------|--------|
 | Niagara | Multi-step (2-page) | input.login-input (#password) | ✅ Handled |
-| Trane | Single-step (1-page) | #userid (#password #logon) | ✅ Handled |
+| Meatball | Single-step (1-page) | #userid (#password #logon) | ✅ Handled |
 | Generic | Custom | Various | ✅ Flexible |
 
 ### Test #3: Login Handler Execution
@@ -137,7 +137,7 @@ All captures include:
    - ✅ Single-step logins still work (both fields visible)
    - ✅ Existing configs unchanged (no breaking changes)
    - ✅ Works with different CSS selectors
-   - ✅ No regression on Trane, generic systems
+  - ✅ No regression on Meatball, generic systems
 
 3. **Error Handling:**
    - ✅ Handles disabled fields (force-fill)
@@ -162,7 +162,7 @@ New files created:
 - **Evidence**: Real capture completed successfully
 - **Recommendation**: Production Ready
 
-### ✅ Trane Tracer Synchrony  
+### ✅ Meatball Tracers  
 - **Status**: Configuration Valid (functional test skipped - network)
 - **Pattern**: Single-step form login
 - **Evidence**: Config structure verified

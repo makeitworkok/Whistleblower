@@ -127,7 +127,7 @@ Whistleblower works with **any web-based control system**. We provide ready-to-u
 | Vendor | System | Status |
 | -------- | -------- | -------- |
 | **Tridium** | Niagara (N4) | ✅ Tested |
-| **Trane** | Tracer Synchrony | ✅ Tested |
+| **Meatball** | Tracers | ✅ Tested |
 | **Generic** | React/SPA Systems | ✅ Tested |
 | **Any Custom** | Web-based systems | ✅ Use Bootstrap Recorder |
 

@@ -28,7 +28,7 @@ Validates the syntax and structure of all site configuration files without requi
 - ✅ Login configuration (user_selector, pass_selector, submit_selector, success_selector)
 - ✅ Selector validity (non-empty strings)
 - ✅ Watch targets (each has name and url)
-- 🔷 Login pattern detection (Niagara vs. Trane vs. Custom)
+- 🔷 Login pattern detection (Niagara vs. Meatball vs. Custom)
 
 **Usage:**
 ```powershell
@@ -96,7 +96,7 @@ STDOUT:
 ✅ Execution successful (exit code 0)
 
 ============================================================
-Trane Tracer - SKIP if network unavailable
+Meatball Tracers - SKIP if network unavailable
 ============================================================
 FUNCTIONAL TEST: 196-21test
 ...
@@ -280,7 +280,7 @@ Current test suite validates:
 - ✅ Whistleblower.py execution with configs
 - ✅ Login pattern detection
 - ✅ Multi-step login handling (Niagara)
-- ✅ Single-step login handling (Trane, React)
+- ✅ Single-step login handling (Meatball, React)
 
 **Not tested (manual):**
 - Screenshot quality/completeness

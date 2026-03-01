@@ -16,7 +16,7 @@ This is the first distributable release of Whistleblower—a read-only evidence 
 - ✅ **Automated login** to BAS/SCADA web interfaces
 - ✅ **Screenshot capture** of dashboards and graphics
 - ✅ **DOM text extraction** with configurable selectors
-- ✅ **Vendor templates** included (Niagara, Trane Tracer, React/SPA)
+- ✅ **Vendor templates** included (Niagara, Meatball Tracers, React/SPA)
 - ✅ **Bootstrap recorder** for auto-discovering site configurations
 - ✅ **Tkinter GUI** for easy configuration and operation
 - ✅ **Optional AI analysis** with capture comparison
@@ -85,7 +85,7 @@ python tkinter_ui_refactored.py
 ### Vendor Templates
 Pre-configured templates for:
 - Tridium Niagara N4
-- Trane Tracer Synchrony
+- Meatball Tracers
 - Generic React/SPA applications
 
 ### Documentation

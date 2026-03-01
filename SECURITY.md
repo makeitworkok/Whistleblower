@@ -11,7 +11,7 @@
 
 Help me out here, feel free to open an issue, or shoot me a note:
 
-chris@makeitworkok.com
+<chris@makeitworkok.com>
 
 <!-- Copyright (c) 2025-2026 Chris Favre - MIT License -->
 <!-- See LICENSE file for full terms -->

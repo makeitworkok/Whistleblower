@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.0.2] - 2026-03-01
+
+### Added
+- Security-focused test coverage:
+  - `test_core_security.py`
+  - `test_ui_app_security.py`
+  - `test_tkinter_ui.py`
+- App version constant and display updates for `1.0.2` in Tkinter UI.
+
+### Changed
+- `bootstrap_recorder.py` now redacts password values in event logs and stores `${WHISTLEBLOWER_PASSWORD}` placeholder instead of clear-text passwords.
+- `ui_app.py` now applies stricter input validation for URL, site name, viewport bounds, and path normalization.
+- `tkinter_ui_refactored.py` now prompts for bootstrap password when needed and injects it via environment variable before capture.
+- Windows/macOS build metadata updated to `1.0.2` in packaging files (`create-installer.bat`, `whistleblower.spec`).
+
 ## [Unreleased] - 2026-02-19
 
 ### Added

@@ -254,6 +254,18 @@ def infer_login_credentials(
     return {"username": username, "password": password}
 
 
+def redact_sensitive_events(events: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    redacted: list[dict[str, Any]] = []
+    for event in events:
+        scrubbed = dict(event)
+        input_type = str(scrubbed.get("input_type") or "").lower()
+        if input_type == "password" and "value" in scrubbed:
+            value = str(scrubbed.get("value") or "")
+            scrubbed["value"] = f"<redacted:{len(value)} chars>"
+        redacted.append(scrubbed)
+    return redacted
+
+
 def infer_watch_urls(start_url: str, events: list[dict[str, Any]]) -> list[str]:
     seen: set[str] = set()
     ordered: list[str] = []
@@ -477,7 +489,7 @@ def run_bootstrap(
         context.close()
         browser.close()
 
-    raw_events_path.write_text(json.dumps(events, indent=2), encoding="utf-8")
+    raw_events_path.write_text(json.dumps(redact_sensitive_events(events), indent=2), encoding="utf-8")
 
     inferred_login = infer_login_selectors(events)
     inferred_credentials = infer_login_credentials(
@@ -485,6 +497,8 @@ def run_bootstrap(
         user_selector=inferred_login["user_selector"],
         pass_selector=inferred_login["pass_selector"],
     )
+    inferred_password = inferred_credentials["password"]
+    password_value = "${WHISTLEBLOWER_PASSWORD}" if inferred_password else ""
     watch_urls = infer_watch_urls(url, events)
     watch = []
     for ix, url in enumerate(watch_urls[:8]):
@@ -509,7 +523,7 @@ def run_bootstrap(
         },
         "login": {
             "username": inferred_credentials["username"],
-            "password": inferred_credentials["password"],
+            "password": password_value,
             "user_selector": inferred_login["user_selector"],
             "pass_selector": inferred_login["pass_selector"],
             "submit_selector": inferred_login["submit_selector"],
@@ -526,7 +540,7 @@ def run_bootstrap(
         "notes": [
             "Review selectors before use; dynamic classes may need refinement.",
             "Copy selected steps into a target under watch[].pre_click_steps.",
-            "Captured username/password are stored directly in generated config.",
+            "Generated login.password uses ${WHISTLEBLOWER_PASSWORD}; set this env var before capture runs.",
             "Suggested wait_ms is inferred from observed time between actions/navigation.",
         ],
         "artifacts": {

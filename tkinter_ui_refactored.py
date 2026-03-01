@@ -5,6 +5,8 @@
 
 from __future__ import annotations
 
+__version__ = "1.0.2"
+
 import sys
 import logging
 from pathlib import Path as LogPath
@@ -71,6 +73,7 @@ def setup_data_directories():
 setup_data_directories()
 
 import json
+import os
 import queue
 import threading
 import tkinter as tk
@@ -98,7 +101,7 @@ class WhistleblowerUIRefactored:
     def __init__(self, root: tk.Tk) -> None:
         """Initialize the UI."""
         self.root = root
-        self.root.title("Whistleblower")
+        self.root.title(f"Whistleblower v{__version__}")
         self.root.geometry("1000x800")
 
         # Threading
@@ -108,6 +111,7 @@ class WhistleblowerUIRefactored:
         self.analysis_thread: threading.Thread | None = None
         self.schedule_running = False
         self.bootstrap_running = False
+        self.site_password: dict[str, str] = {}  # Store passwords per site in memory
 
         # Log queue system
         self.log_queue: queue.Queue[tuple[str, str, bool]] = queue.Queue()
@@ -130,7 +134,7 @@ class WhistleblowerUIRefactored:
 
         # Title
         title_label = ttk.Label(
-            main_frame, text="Whistleblower", font=("TkDefaultFont", 16, "bold")
+            main_frame, text=f"Whistleblower v{__version__}", font=("TkDefaultFont", 16, "bold")
         )
         title_label.pack(pady=10)
 
@@ -1230,7 +1234,25 @@ Analysis Settings:
             self._log(f"✓ Site initialized successfully!")
             self._log(f"Configuration saved: {result['config_out']}")
             self._log(f"Steps saved: {result['steps_out']}")
-            self.root.after(0, lambda: messagebox.showinfo("Success", f"Site '{site_name}' initialized and configured.\n\nYou can now use Capture to take snapshots of the site."))
+            
+            # Prompt for password after bootstrap
+            def prompt_password():
+                from tkinter.simpledialog import askstring
+                pwd = askstring(
+                    "Login Password",
+                    f"Enter the login password for {site_name}:\n\n(This will be stored in memory for this session only)",
+                    show="*",
+                    parent=self.root
+                )
+                if pwd:
+                    self.site_password[site_name] = pwd
+                    self._log(f"✓ Password stored for {site_name}")
+                    messagebox.showinfo("Success", f"Site '{site_name}' initialized and configured.\n\nYou can now use Capture to take snapshots of the site.")
+                else:
+                    self._log(f"⚠ Password not set for {site_name} - captures may fail if password is required")
+                    messagebox.showwarning("Warning", f"No password entered. Captures may fail if password is required.")
+            
+            self.root.after(0, prompt_password)
         except Exception as exc:
             self._log(f"ERROR: {exc}")
             self.root.after(0, lambda: messagebox.showerror("Error", f"Bootstrap failed: {exc}"))
@@ -1315,6 +1337,12 @@ Analysis Settings:
             self._log_capture(f"Mode: {'Headed' if headed else 'Headless'}, Video: {'ON' if record_video else 'OFF'}")
             self._log_capture("Launching browser...")
             
+            # Inject password into environment for this capture
+            if site_name in self.site_password:
+                os.environ["WHISTLEBLOWER_PASSWORD"] = self.site_password[site_name]
+            elif "WHISTLEBLOWER_PASSWORD" not in os.environ:
+                self._log(f"WARNING: No password available for {site_name} (not set during bootstrap)")
+            
             result = whistleblower.run_capture(
                 config_path=str(bootstrap_file),
                 data_dir=config["directories"]["capture_data"],
@@ -1382,6 +1410,12 @@ Analysis Settings:
                     bootstrap_file = Path(config["directories"]["bootstrap_artifacts"]) / f"{site_name}.bootstrap.json"
                     
                     if bootstrap_file.exists():
+                        # Inject password into environment for this capture
+                        if site_name in self.site_password:
+                            os.environ["WHISTLEBLOWER_PASSWORD"] = self.site_password[site_name]
+                        elif "WHISTLEBLOWER_PASSWORD" not in os.environ:
+                            self._log(f"WARNING: No password available for {site_name} (not set during bootstrap)")
+                        
                         result = whistleblower.run_capture(
                             config_path=str(bootstrap_file),
                             data_dir=config["directories"]["capture_data"],

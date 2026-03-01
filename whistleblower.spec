@@ -169,7 +169,7 @@ if sys.platform == 'darwin':
         name='Whistleblower.app',
         icon=icon_file,
         bundle_identifier='com.makeitworkok.whistleblower',
-        version='1.0.0',
+        version='1.0.2',
         info_plist={
             'NSPrincipalClass': 'NSApplication',
             'NSAppleScriptEnabled': False,

@@ -119,8 +119,11 @@ def list_analysis_entries(data_dir: Path | None = None, site: str | None = None)
     if isinstance(combined_info, dict):
       combined_md = combined_info.get("analysis_md")
     if combined and combined_md:
+      resolved = resolve_safe_analysis_path(str(combined_md), root)
+      if resolved is None:
+        continue
       label = f"{site_label} / {run_label} / combined"
-      entries.append((label, str(Path(combined_md))))
+      entries.append((label, str(resolved)))
     for target in targets:
       if not isinstance(target, dict):
         continue
@@ -128,14 +131,42 @@ def list_analysis_entries(data_dir: Path | None = None, site: str | None = None)
       target_name = target.get("target_name", "page")
       if not analysis_md:
         continue
+      resolved = resolve_safe_analysis_path(str(analysis_md), root)
+      if resolved is None:
+        continue
       label = f"{site_label} / {run_label} / page {target_name}"
-      entries.append((label, str(Path(analysis_md))))
+      entries.append((label, str(resolved)))
   return entries
 
 
-def load_analysis_text(path: str) -> str | None:
+def resolve_safe_analysis_path(path_value: str, data_root: Path | None = None) -> Path | None:
+  raw = path_value.strip()
+  if not raw:
+    return None
+
+  root = (data_root or Path("data")).resolve()
   try:
-    resolved = Path(path)
+    candidate = Path(raw)
+    if not candidate.is_absolute():
+      candidate = (Path.cwd() / candidate).resolve()
+    else:
+      candidate = candidate.resolve()
+    candidate.relative_to(root)
+  except (OSError, ValueError):
+    return None
+
+  if candidate.suffix.lower() != ".md":
+    return None
+  return candidate
+
+
+def load_analysis_text(path: str) -> str | None:
+  allowed_paths = {entry_path for _, entry_path in list_analysis_entries()}
+  resolved = resolve_safe_analysis_path(path)
+  if resolved is None or str(resolved) not in allowed_paths:
+    return None
+
+  try:
     if not resolved.exists() or not resolved.is_file():
       return None
     return resolved.read_text(encoding="utf-8")
@@ -185,6 +216,42 @@ def parse_local_datetime(value: str) -> str | None:
   if parsed.tzinfo is None:
     parsed = parsed.replace(tzinfo=timezone.utc)
   return parsed.astimezone(timezone.utc).isoformat().replace("+00:00", "Z")
+
+
+def is_valid_http_url(value: str) -> bool:
+  parsed = urllib.parse.urlparse(value)
+  return parsed.scheme in {"http", "https"} and bool(parsed.netloc)
+
+
+def is_valid_site_name(value: str) -> bool:
+  if not value or len(value) > 80:
+    return False
+  for char in value:
+    if not (char.isalnum() or char in "-_."):
+      return False
+  return True
+
+
+def parse_bounded_int(value: str, *, minimum: int, maximum: int) -> int | None:
+  try:
+    parsed = int(value)
+  except ValueError:
+    return None
+  if parsed < minimum or parsed > maximum:
+    return None
+  return parsed
+
+
+def normalize_relative_path(value: str) -> str | None:
+  raw = value.strip()
+  if not raw:
+    return ""
+  if raw.startswith("-"):
+    return None
+  path = Path(raw)
+  if path.is_absolute() or any(part in {"", ".", ".."} for part in path.parts):
+    return None
+  return str(path)
 
 
 def build_capture_command(data: dict[str, list[str]], prefix: str = "") -> tuple[list[str] | None, str | None]:
@@ -1087,6 +1154,25 @@ class UIHandler(BaseHTTPRequestHandler):
         if not url or not site_name:
             self.render_with_message("URL and site name are required.")
             return
+        if not is_valid_http_url(url):
+            self.render_with_message("URL must be a valid http(s) address.")
+            return
+        if not is_valid_site_name(site_name):
+            self.render_with_message("Site name may only contain letters, numbers, hyphen, underscore, and dot.")
+            return
+
+        viewport_width = parse_bounded_int((data.get("viewport_width") or ["1920"])[0] or "1920", minimum=1, maximum=10000)
+        viewport_height = parse_bounded_int((data.get("viewport_height") or ["1080"])[0] or "1080", minimum=1, maximum=10000)
+        if viewport_width is None or viewport_height is None:
+            self.render_with_message("Viewport width/height must be numbers between 1 and 10000.")
+            return
+
+        output_dir = normalize_relative_path((data.get("output_dir") or [""])[0])
+        config_out = normalize_relative_path((data.get("config_out") or [""])[0])
+        steps_out = normalize_relative_path((data.get("steps_out") or [""])[0])
+        if output_dir is None or config_out is None or steps_out is None:
+            self.render_with_message("Output paths must be relative workspace paths without '..' segments.")
+            return
 
         with STATE_LOCK:
             if BOOTSTRAP_PROCESS is not None and BOOTSTRAP_PROCESS.poll() is None:
@@ -1102,9 +1188,9 @@ class UIHandler(BaseHTTPRequestHandler):
             "--site-name",
             site_name,
             "--viewport-width",
-            (data.get("viewport_width") or ["1920"])[0] or "1920",
+            str(viewport_width),
             "--viewport-height",
-            (data.get("viewport_height") or ["1080"])[0] or "1080",
+            str(viewport_height),
         ]
 
         if "ignore_https_errors" in data:
@@ -1112,15 +1198,12 @@ class UIHandler(BaseHTTPRequestHandler):
         if "record_video" in data:
             cmd.append("--record-video")
 
-        output_dir = (data.get("output_dir") or [""])[0].strip()
         if output_dir:
             cmd.extend(["--output-dir", output_dir])
 
-        config_out = (data.get("config_out") or [""])[0].strip()
         if config_out:
             cmd.extend(["--config-out", config_out])
 
-        steps_out = (data.get("steps_out") or [""])[0].strip()
         if steps_out:
             cmd.extend(["--steps-out", steps_out])
 

@@ -17,7 +17,7 @@ if not exist "dist\Whistleblower\Whistleblower.exe" (
     exit /b 1
 )
 
-set VERSION=1.0.0
+set VERSION=1.0.2
 set ZIPNAME=Whistleblower-Windows-v%VERSION%.zip
 set TEMP_DIR=dist\temp-package
 
